@@ -5,7 +5,10 @@
       "PowerShell(Rename-Item *)",
       "PowerShell(npx tsc --noEmit)",
       "PowerShell(npx tsc --noEmit -p tsconfig.json 2>&1 | Select-Object -First 40)",
-      "PowerShell(npx tsc --noEmit -p tsconfig.json; Write-Output \"EXIT=$LASTEXITCODE\")"
+      "PowerShell(npx tsc --noEmit -p tsconfig.json; Write-Output \"EXIT=$LASTEXITCODE\")",
+      "Bash(git checkout *)",
+      "Bash(git add *)",
+      "Bash(git commit -m ' *)"
     ]
   }
 }

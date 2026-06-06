@@ -1,0 +1,141 @@
+@import "tailwindcss";
+
+/*
+  VersaVid design system — Tailwind v4 theme tokens.
+  Defining color tokens inside @theme generates matching background, text and
+  border utilities, e.g. bg-canvas, text-muted, border-edge.
+*/
+@theme {
+  --color-canvas: #0d1117;
+  --color-panel: #161b22;
+  --color-panel-2: #1c2230;
+  --color-edge: #21262d;
+  --color-edge-strong: #30363d;
+  --color-accent: #7f77dd;
+  --color-accent-soft: #9a93ec;
+  --color-pink: #d4537e;
+  --color-success: #3fb950;
+  --color-warning: #d29922;
+  --color-ink: #e6edf3;
+  --color-muted: #8b949e;
+
+  --radius-card: 12px;
+
+  --font-sans: var(--font-geist-sans), ui-sans-serif, system-ui, sans-serif;
+  --font-mono: var(--font-geist-mono), ui-monospace, monospace;
+}
+
+html {
+  background: var(--color-canvas);
+  color-scheme: dark;
+}
+
+body {
+  background: var(--color-canvas);
+  color: var(--color-ink);
+  font-family: var(--font-sans);
+  -webkit-font-smoothing: antialiased;
+}
+
+/* Brand gradient helpers ----------------------------------------------- */
+.gradient-text {
+  background-image: linear-gradient(90deg, #7f77dd 0%, #d4537e 100%);
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+}
+
+.gradient-bg {
+  background-image: linear-gradient(135deg, #7f77dd 0%, #d4537e 100%);
+}
+
+.gradient-bg-soft {
+  background-image: linear-gradient(135deg, rgba(127, 119, 221, 0.15) 0%, rgba(212, 83, 126, 0.15) 100%);
+}
+
+.glow {
+  box-shadow: 0 0 40px -8px rgba(127, 119, 221, 0.45);
+}
+
+/* Custom scrollbar ----------------------------------------------------- */
+::-webkit-scrollbar {
+  width: 10px;
+  height: 10px;
+}
+::-webkit-scrollbar-track {
+  background: #0d1117;
+}
+::-webkit-scrollbar-thumb {
+  background: #21262d;
+  border-radius: 8px;
+  border: 2px solid #0d1117;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: #30363d;
+}
+
+/* Animations ----------------------------------------------------------- */
+@keyframes fade-up {
+  from {
+    opacity: 0;
+    transform: translateY(12px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+.animate-fade-up {
+  animation: fade-up 0.5s ease both;
+}
+
+@keyframes pulse-ring {
+  0% {
+    box-shadow: 0 0 0 0 rgba(127, 119, 221, 0.4);
+  }
+  70% {
+    box-shadow: 0 0 0 10px rgba(127, 119, 221, 0);
+  }
+  100% {
+    box-shadow: 0 0 0 0 rgba(127, 119, 221, 0);
+  }
+}
+.animate-pulse-ring {
+  animation: pulse-ring 1.8s infinite;
+}
+
+@keyframes shimmer {
+  0% {
+    background-position: -400px 0;
+  }
+  100% {
+    background-position: 400px 0;
+  }
+}
+.shimmer {
+  background: linear-gradient(90deg, #161b22 0%, #1c2230 50%, #161b22 100%);
+  background-size: 800px 100%;
+  animation: shimmer 1.4s infinite linear;
+}
+
+@keyframes float-slow {
+  0%,
+  100% {
+    transform: translateY(0);
+  }
+  50% {
+    transform: translateY(-14px);
+  }
+}
+.animate-float {
+  animation: float-slow 6s ease-in-out infinite;
+}
+
+/* Utility ------------------------------------------------------------- */
+.no-scrollbar::-webkit-scrollbar {
+  display: none;
+}
+.no-scrollbar {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}

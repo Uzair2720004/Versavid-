@@ -4,7 +4,7 @@ import { useState } from "react";
 import { useApp } from "@/lib/store";
 import { PageHeader } from "@/components/dashboard/PageHeader";
 import { Card, ProgressBar, Badge } from "@/components/ui/primitives";
-import { Button } from "@/components/ui/Button";
+import { Button, ButtonLink } from "@/components/ui/Button";
 import { Icon } from "@/components/ui/Icon";
 import { CREDIT_PACKS, PLANS, LENGTHS } from "@/lib/constants";
 import { cn, formatDate } from "@/lib/utils";
@@ -18,8 +18,35 @@ const TXN_ICON: Record<Transaction["type"], string> = {
   bonus: "gift",
 };
 
+// Lemon Squeezy product IDs for one-time credit packs (keyed by CREDIT_PACKS id).
+const PACK_PRODUCT_ID: Record<string, string | undefined> = {
+  starter: process.env.NEXT_PUBLIC_LS_STARTER_ID,
+  creator: process.env.NEXT_PUBLIC_LS_CREATOR_ID,
+  pro: process.env.NEXT_PUBLIC_LS_PRO_ID,
+  studio: process.env.NEXT_PUBLIC_LS_STUDIO_ID,
+};
+
+// Lemon Squeezy product IDs for subscription plans (keyed by PLANS id).
+const PLAN_PRODUCT_ID: Record<string, string | undefined> = {
+  creator: process.env.NEXT_PUBLIC_LS_CREATOR_PLAN_ID,
+  pro: process.env.NEXT_PUBLIC_LS_PRO_PLAN_ID,
+  agency: process.env.NEXT_PUBLIC_LS_AGENCY_PLAN_ID,
+};
+
+/**
+ * Build a Lemon Squeezy hosted-checkout URL for a product. The buyer's Supabase
+ * user id is attached as custom data so the payment webhook can credit the right
+ * account. Returns null when no product id is configured.
+ */
+function checkoutUrl(productId: string | undefined, userId?: string): string | null {
+  if (!productId) return null;
+  const url = `https://versavid.lemonsqueezy.com/checkout/buy/${productId}`;
+  return userId ? `${url}?checkout[custom][user_id]=${encodeURIComponent(userId)}` : url;
+}
+
 export default function CreditsPage() {
-  const { credits, transactions, addCredits } = useApp();
+  const { credits, transactions, profile } = useApp();
+  const userId = profile?.id;
   const [activePlan] = useState("creator");
   const [copied, setCopied] = useState(false);
   const [renewsOn] = useState(() => formatDate(new Date(Date.now() + 12 * 864e5).toISOString()));
@@ -30,16 +57,6 @@ export default function CreditsPage() {
 
   const shortCost = LENGTHS[0].credits;
   const longCost = LENGTHS[2].credits;
-
-  function buyPack(packId: string) {
-    const pack = CREDIT_PACKS.find((p) => p.id === packId);
-    if (!pack) return;
-    addCredits(pack.credits, {
-      type: "purchase",
-      amount$: pack.price,
-      description: `${pack.name} pack — ${pack.credits} credits`,
-    });
-  }
 
   function copyReferral() {
     navigator.clipboard?.writeText("https://versavid.app/r/alex-rivera").catch(() => {});
@@ -103,29 +120,39 @@ export default function CreditsPage() {
         <h2 className="text-lg font-semibold text-ink">Buy credits</h2>
         <p className="mt-1 text-sm text-muted">One-time top-ups — never expire.</p>
         <div className="mt-4 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-          {CREDIT_PACKS.map((pack) => (
-            <Card key={pack.id} className={cn("relative flex flex-col p-5", pack.popular && "border-accent/60 glow")}>
-              {pack.popular && (
-                <span className="absolute -top-2.5 left-1/2 -translate-x-1/2 rounded-full gradient-bg px-2.5 py-0.5 text-[11px] font-semibold text-white">
-                  Best value
-                </span>
-              )}
-              <h3 className="text-sm font-semibold text-ink">{pack.name}</h3>
-              <div className="mt-2 flex items-end gap-1">
-                <span className="text-3xl font-bold text-ink">${pack.price}</span>
-              </div>
-              <p className="mt-1 text-sm font-medium text-accent-soft">{pack.credits} credits</p>
-              <p className="mt-1 text-xs text-muted">{pack.perks}</p>
-              <Button
-                fullWidth
-                variant={pack.popular ? "primary" : "secondary"}
-                className="mt-4"
-                onClick={() => buyPack(pack.id)}
-              >
-                Buy now
-              </Button>
-            </Card>
-          ))}
+          {CREDIT_PACKS.map((pack) => {
+            const href = checkoutUrl(PACK_PRODUCT_ID[pack.id], userId);
+            return (
+              <Card key={pack.id} className={cn("relative flex flex-col p-5", pack.popular && "border-accent/60 glow")}>
+                {pack.popular && (
+                  <span className="absolute -top-2.5 left-1/2 -translate-x-1/2 rounded-full gradient-bg px-2.5 py-0.5 text-[11px] font-semibold text-white">
+                    Best value
+                  </span>
+                )}
+                <h3 className="text-sm font-semibold text-ink">{pack.name}</h3>
+                <div className="mt-2 flex items-end gap-1">
+                  <span className="text-3xl font-bold text-ink">${pack.price}</span>
+                </div>
+                <p className="mt-1 text-sm font-medium text-accent-soft">{pack.credits} credits</p>
+                <p className="mt-1 text-xs text-muted">{pack.perks}</p>
+                {href ? (
+                  <ButtonLink
+                    href={href}
+                    target="_blank"
+                    fullWidth
+                    variant={pack.popular ? "primary" : "secondary"}
+                    className="mt-4"
+                  >
+                    Buy now
+                  </ButtonLink>
+                ) : (
+                  <Button fullWidth variant={pack.popular ? "primary" : "secondary"} className="mt-4" disabled>
+                    Buy now
+                  </Button>
+                )}
+              </Card>
+            );
+          })}
         </div>
       </section>
 
@@ -135,6 +162,7 @@ export default function CreditsPage() {
         <div className="mt-4 grid gap-4 lg:grid-cols-4">
           {PLANS.map((plan) => {
             const isCurrent = plan.id === activePlan;
+            const href = checkoutUrl(PLAN_PRODUCT_ID[plan.id], userId);
             return (
               <Card key={plan.id} className={cn("flex flex-col p-5", isCurrent && "border-accent/60")}>
                 <div className="flex items-center justify-between">
@@ -154,9 +182,19 @@ export default function CreditsPage() {
                     </li>
                   ))}
                 </ul>
-                <Button variant={isCurrent ? "secondary" : "outline"} fullWidth className="mt-4" disabled={isCurrent}>
-                  {isCurrent ? "Current plan" : plan.price === 0 ? "Downgrade" : "Upgrade"}
-                </Button>
+                {isCurrent ? (
+                  <Button variant="secondary" fullWidth className="mt-4" disabled>
+                    Current plan
+                  </Button>
+                ) : href ? (
+                  <ButtonLink href={href} target="_blank" variant="outline" fullWidth className="mt-4">
+                    Upgrade
+                  </ButtonLink>
+                ) : (
+                  <Button variant="outline" fullWidth className="mt-4" disabled>
+                    Downgrade
+                  </Button>
+                )}
               </Card>
             );
           })}

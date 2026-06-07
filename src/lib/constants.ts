@@ -233,10 +233,10 @@ export interface CreditPack {
 }
 
 export const CREDIT_PACKS: CreditPack[] = [
-  { id: "starter", name: "Starter", price: 5, credits: 30, perks: "~6 short videos" },
-  { id: "creator", name: "Creator", price: 15, credits: 100, perks: "~20 short videos", popular: true },
-  { id: "pro", name: "Pro", price: 35, credits: 280, perks: "~56 short videos" },
-  { id: "studio", name: "Studio", price: 80, credits: 700, perks: "~140 short videos" },
+  { id: "starter", name: "Starter", price: 9, credits: 30, perks: "~6 short videos" },
+  { id: "creator", name: "Creator", price: 25, credits: 100, perks: "~20 short videos", popular: true },
+  { id: "pro", name: "Pro", price: 59, credits: 280, perks: "~56 short videos" },
+  { id: "studio", name: "Studio", price: 129, credits: 700, perks: "~140 short videos" },
 ];
 
 export const SETTINGS_SECTIONS = [

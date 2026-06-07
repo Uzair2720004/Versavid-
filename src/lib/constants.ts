@@ -1,7 +1,7 @@
 // Static catalog data used across the wizard, settings, pricing, etc.
 
 export const APP_NAME = "VersaVid";
-export const FREE_CREDITS = 15;
+export const FREE_CREDITS = 5;
 
 export const STATS_BAR = [
   { value: "5 min", label: "Average build time" },

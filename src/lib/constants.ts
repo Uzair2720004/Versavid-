@@ -197,7 +197,7 @@ export const PLANS: Plan[] = [
     period: "/mo",
     credits: "40 credits / mo",
     blurb: "For creators publishing weekly.",
-    features: ["120 credits / month", "1080p exports", "No watermark", "All 8 voices", "Priority queue"],
+    features: ["40 credits / month", "1080p exports", "No watermark", "All 8 voices", "Priority queue"],
     highlighted: true,
     cta: "Choose Creator",
   },
@@ -208,7 +208,7 @@ export const PLANS: Plan[] = [
     period: "/mo",
     credits: "90 credits / mo",
     blurb: "For daily uploaders and small teams.",
-    features: ["300 credits / month", "4K exports", "Voice cloning", "Brand kits", "Analytics"],
+    features: ["90 credits / month", "4K exports", "Voice cloning", "Brand kits", "Analytics"],
     cta: "Choose Pro",
   },
   {
@@ -218,7 +218,7 @@ export const PLANS: Plan[] = [
     period: "/mo",
     credits: "240 credits / mo",
     blurb: "For agencies managing many channels.",
-    features: ["900 credits / month", "4K exports", "5 team seats", "API access", "Dedicated support"],
+    features: ["240 credits / month", "4K exports", "5 team seats", "API access", "Dedicated support"],
     cta: "Choose Agency",
   },
 ];

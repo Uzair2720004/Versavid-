@@ -1,4 +1,4 @@
-"use client";
+﻿"use client";
 
 import {
   createContext,
@@ -103,7 +103,7 @@ function seedVideos(userId: string): VideoRecord[] {
     topic,
     format,
     status,
-    script: `Scene 1: ${topic}…`,
+    script: `Scene 1: ${topic}â€¦`,
     video_url: status === "ready" ? "/demo/sample.mp4" : null,
     thumbnail_url: placeholderImage(i + 11, format === "9:16" ? 450 : 800, format === "9:16" ? 800 : 450),
     credits_used: credits,
@@ -146,7 +146,7 @@ function seedTransactions(userId: string): Transaction[] {
       type: "bonus",
       status: "completed",
       payment_id: null,
-      description: "Welcome bonus — 15 free credits",
+      description: "Welcome bonus â€” 15 free credits",
       created_at: new Date(now - 72 * 3600_000).toISOString(),
     },
     {
@@ -157,7 +157,7 @@ function seedTransactions(userId: string): Transaction[] {
       type: "purchase",
       status: "completed",
       payment_id: "demo_pi_1029",
-      description: "Creator pack — 100 credits",
+      description: "Creator pack â€” 100 credits",
       created_at: new Date(now - 50 * 3600_000).toISOString(),
     },
     {
@@ -168,7 +168,7 @@ function seedTransactions(userId: string): Transaction[] {
       type: "usage",
       status: "completed",
       payment_id: null,
-      description: "Video render — 5 AI tools that feel illegal to know",
+      description: "Video render â€” 5 AI tools that feel illegal to know",
       created_at: new Date(now - 4 * 3600_000).toISOString(),
     },
   ];
@@ -292,9 +292,11 @@ export function AppProvider({ children }: { children: ReactNode }) {
         // welcome transaction. If a session was issued (email confirmation
         // disabled) we can load it immediately.
         if (data.session) {
-          const next = await loadUserData(supabase, user.id);
-          setState(next);
-          if (next.profile) return next.profile;
+          try {
+            const next = await loadUserData(supabase, user.id);
+            setState(next);
+            if (next.profile) return next.profile;
+          } catch (_) {}
         }
         return {
           id: user.id,
@@ -583,3 +585,4 @@ export function useApp(): AppContextValue {
   if (!ctx) throw new Error("useApp must be used within <AppProvider>");
   return ctx;
 }
+

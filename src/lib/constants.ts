@@ -1,4 +1,4 @@
-// Static catalog data used across the wizard, settings, pricing, etc.
+﻿// Static catalog data used across the wizard, settings, pricing, etc.
 
 export const APP_NAME = "VersaVid";
 export const FREE_CREDITS = 5;
@@ -7,7 +7,7 @@ export const STATS_BAR = [
   { value: "5 min", label: "Average build time" },
   { value: "8 steps", label: "Fully automated" },
   { value: "6", label: "Languages supported" },
-  { value: "15", label: "Free credits on signup" },
+  { value: "5", label: "Free credits on signup" },
 ];
 
 // ---- Wizard option catalogs ------------------------------------------------
@@ -18,9 +18,9 @@ export const FORMATS = [
 ] as const;
 
 export const LENGTHS = [
-  { value: "short", label: "Short", sub: "15–30s", credits: 3 },
-  { value: "medium", label: "Medium", sub: "30–60s", credits: 5 },
-  { value: "long", label: "Long", sub: "1–3 min", credits: 9 },
+  { value: "short", label: "Short", sub: "15â€“30s", credits: 3 },
+  { value: "medium", label: "Medium", sub: "30â€“60s", credits: 5 },
+  { value: "long", label: "Long", sub: "1â€“3 min", credits: 9 },
 ] as const;
 
 export const TONES = [
@@ -59,29 +59,29 @@ export const VIDEO_STYLES = [
 ];
 
 export const VOICES = [
-  { value: "atlas", name: "Atlas", tag: "Deep • Male", accent: "American", swatch: "#7f77dd" },
-  { value: "nova", name: "Nova", tag: "Warm • Female", accent: "American", swatch: "#d4537e" },
-  { value: "echo", name: "Echo", tag: "Crisp • Male", accent: "British", swatch: "#3fb950" },
-  { value: "luna", name: "Luna", tag: "Soft • Female", accent: "British", swatch: "#d29922" },
-  { value: "ember", name: "Ember", tag: "Energetic • Female", accent: "Australian", swatch: "#5aa0ff" },
-  { value: "ridge", name: "Ridge", tag: "Gravelly • Male", accent: "American", swatch: "#e879f9" },
-  { value: "sage", name: "Sage", tag: "Calm • Neutral", accent: "Neutral", swatch: "#2dd4bf" },
-  { value: "pixel", name: "Pixel", tag: "Youthful • Female", accent: "American", swatch: "#f59e0b" },
+  { value: "atlas", name: "Atlas", tag: "Deep â€¢ Male", accent: "American", swatch: "#7f77dd" },
+  { value: "nova", name: "Nova", tag: "Warm â€¢ Female", accent: "American", swatch: "#d4537e" },
+  { value: "echo", name: "Echo", tag: "Crisp â€¢ Male", accent: "British", swatch: "#3fb950" },
+  { value: "luna", name: "Luna", tag: "Soft â€¢ Female", accent: "British", swatch: "#d29922" },
+  { value: "ember", name: "Ember", tag: "Energetic â€¢ Female", accent: "Australian", swatch: "#5aa0ff" },
+  { value: "ridge", name: "Ridge", tag: "Gravelly â€¢ Male", accent: "American", swatch: "#e879f9" },
+  { value: "sage", name: "Sage", tag: "Calm â€¢ Neutral", accent: "Neutral", swatch: "#2dd4bf" },
+  { value: "pixel", name: "Pixel", tag: "Youthful â€¢ Female", accent: "American", swatch: "#f59e0b" },
 ];
 
 export const LANGUAGES = [
-  { value: "en", label: "English", flag: "🇺🇸" },
-  { value: "es", label: "Spanish", flag: "🇪🇸" },
-  { value: "fr", label: "French", flag: "🇫🇷" },
-  { value: "de", label: "German", flag: "🇩🇪" },
-  { value: "pt", label: "Portuguese", flag: "🇧🇷" },
-  { value: "hi", label: "Hindi", flag: "🇮🇳" },
+  { value: "en", label: "English", flag: "ðŸ‡ºðŸ‡¸" },
+  { value: "es", label: "Spanish", flag: "ðŸ‡ªðŸ‡¸" },
+  { value: "fr", label: "French", flag: "ðŸ‡«ðŸ‡·" },
+  { value: "de", label: "German", flag: "ðŸ‡©ðŸ‡ª" },
+  { value: "pt", label: "Portuguese", flag: "ðŸ‡§ðŸ‡·" },
+  { value: "hi", label: "Hindi", flag: "ðŸ‡®ðŸ‡³" },
 ];
 
 export const SPEEDS = [
-  { value: "slow", label: "Slow", sub: "0.85×" },
-  { value: "normal", label: "Normal", sub: "1.0×" },
-  { value: "fast", label: "Fast", sub: "1.15×" },
+  { value: "slow", label: "Slow", sub: "0.85Ã—" },
+  { value: "normal", label: "Normal", sub: "1.0Ã—" },
+  { value: "fast", label: "Fast", sub: "1.15Ã—" },
 ] as const;
 
 export const CAPTION_STYLES = [
@@ -122,7 +122,7 @@ export const GEN_STEPS = [
 ];
 
 export const HOW_IT_WORKS = [
-  { step: 1, title: "Pick a topic", desc: "Tell us what your video is about — or paste your own script." },
+  { step: 1, title: "Pick a topic", desc: "Tell us what your video is about â€” or paste your own script." },
   { step: 2, title: "AI writes the script", desc: "Claude drafts a scroll-stopping, scene-by-scene script." },
   { step: 3, title: "Visuals are generated", desc: "Flux creates on-brand images for every scene." },
   { step: 4, title: "Clips come alive", desc: "Kling animates stills into smooth motion video." },
@@ -140,7 +140,7 @@ export const FEATURES = [
   },
   {
     title: "8-step automation",
-    desc: "Script, images, clips, voice, captions, music, render — all orchestrated for you.",
+    desc: "Script, images, clips, voice, captions, music, render â€” all orchestrated for you.",
     icon: "workflow",
   },
   {
@@ -150,7 +150,7 @@ export const FEATURES = [
   },
   {
     title: "Caption styles that pop",
-    desc: "Word-by-word karaoke, bold pop, neon glow and more — auto-timed to your audio.",
+    desc: "Word-by-word karaoke, bold pop, neon glow and more â€” auto-timed to your audio.",
     icon: "captions",
   },
   {
@@ -253,3 +253,4 @@ export const COUNTRIES = [
   "United States", "United Kingdom", "Canada", "Australia", "India",
   "Germany", "France", "Spain", "Brazil", "Japan", "Other",
 ];
+

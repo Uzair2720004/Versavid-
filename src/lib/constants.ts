@@ -80,8 +80,8 @@ export const LANGUAGES = [
 
 export const SPEEDS = [
   { value: "slow", label: "Slow", sub: "0.85Ã—" },
-  { value: "normal", label: "Normal", sub: "1.0Ã—" },
-  { value: "fast", label: "Fast", sub: "1.15Ã—" },
+  { value: "normal", label: "Normal", sub: "1.0×" },
+  { value: "fast", label: "Fast", sub: "1.15×" },
 ] as const;
 
 export const CAPTION_STYLES = [
@@ -253,4 +253,5 @@ export const COUNTRIES = [
   "United States", "United Kingdom", "Canada", "Australia", "India",
   "Germany", "France", "Spain", "Brazil", "Japan", "Other",
 ];
+
 

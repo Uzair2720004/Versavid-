@@ -1,4 +1,4 @@
-"use client";
+﻿"use client";
 
 import { useState } from "react";
 import { useApp } from "@/lib/store";
@@ -47,12 +47,12 @@ function checkoutUrl(productId: string | undefined, userId?: string): string | n
 export default function CreditsPage() {
   const { credits, transactions, profile } = useApp();
   const userId = profile?.id;
-  const [activePlan] = useState("creator");
+  const [activePlan] = useState<string | null>(null);
   const [copied, setCopied] = useState(false);
   const [renewsOn] = useState(() => formatDate(new Date(Date.now() + 12 * 864e5).toISOString()));
 
   const balance = credits?.balance ?? 0;
-  const allowance = credits?.monthly_allowance ?? 120;
+  const allowance = credits?.monthly_allowance ?? 0;
   const usedPct = Math.min(100, ((credits?.total_used ?? 0) / allowance) * 100);
 
   const shortCost = LENGTHS[0].credits;
@@ -83,11 +83,11 @@ export default function CreditsPage() {
           </p>
           <div className="mt-5 grid grid-cols-2 gap-3">
             <div className="rounded-xl border border-edge bg-canvas/70 px-4 py-3">
-              <p className="text-xs text-muted">≈ Shorts you can make</p>
+              <p className="text-xs text-muted">â‰ˆ Shorts you can make</p>
               <p className="mt-0.5 text-lg font-bold text-ink">{Math.floor(balance / shortCost)}</p>
             </div>
             <div className="rounded-xl border border-edge bg-canvas/70 px-4 py-3">
-              <p className="text-xs text-muted">≈ Long videos</p>
+              <p className="text-xs text-muted">â‰ˆ Long videos</p>
               <p className="mt-0.5 text-lg font-bold text-ink">{Math.floor(balance / longCost)}</p>
             </div>
           </div>
@@ -99,7 +99,7 @@ export default function CreditsPage() {
             <Badge tone="success">Active</Badge>
           </div>
           <h3 className="mt-1 text-2xl font-bold text-ink">Creator</h3>
-          <p className="mt-1 text-sm text-muted">$19/mo · 120 credits / month</p>
+          <p className="mt-1 text-sm text-muted">$19/mo Â· 120 credits / month</p>
           <ul className="mt-4 flex-1 space-y-2 text-sm text-muted">
             <li className="flex items-center gap-2">
               <Icon name="check" size={15} className="text-success" /> 1080p exports, no watermark
@@ -118,7 +118,7 @@ export default function CreditsPage() {
       {/* Buy credits */}
       <section className="mt-10">
         <h2 className="text-lg font-semibold text-ink">Buy credits</h2>
-        <p className="mt-1 text-sm text-muted">One-time top-ups — never expire.</p>
+        <p className="mt-1 text-sm text-muted">One-time top-ups â€” never expire.</p>
         <div className="mt-4 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
           {CREDIT_PACKS.map((pack) => {
             const href = checkoutUrl(PACK_PRODUCT_ID[pack.id], userId);
@@ -210,7 +210,7 @@ export default function CreditsPage() {
               <Icon name="card" size={20} />
             </span>
             <div className="flex-1">
-              <p className="text-sm font-medium text-ink">Visa •••• 4242</p>
+              <p className="text-sm font-medium text-ink">Visa â€¢â€¢â€¢â€¢ 4242</p>
               <p className="text-xs text-muted">Expires 08/27</p>
             </div>
             <Button variant="ghost" size="sm">
@@ -240,7 +240,7 @@ export default function CreditsPage() {
               {copied ? "Copied" : "Copy"}
             </Button>
           </div>
-          <p className="mt-3 text-xs text-muted">3 friends referred · 75 credits earned</p>
+          <p className="mt-3 text-xs text-muted">3 friends referred Â· 75 credits earned</p>
         </Card>
       </div>
 
@@ -276,7 +276,7 @@ export default function CreditsPage() {
                       {t.credits >= 0 ? "+" : ""}
                       {t.credits}
                     </td>
-                    <td className="px-5 py-3 text-muted">{t.amount > 0 ? `$${t.amount.toFixed(2)}` : "—"}</td>
+                    <td className="px-5 py-3 text-muted">{t.amount > 0 ? `$${t.amount.toFixed(2)}` : "â€”"}</td>
                     <td className="px-5 py-3 text-muted">{formatDate(t.created_at)}</td>
                     <td className="px-5 py-3">
                       <Badge tone={t.status === "completed" ? "success" : t.status === "pending" ? "warning" : "pink"}>
@@ -300,3 +300,4 @@ export default function CreditsPage() {
     </div>
   );
 }
+

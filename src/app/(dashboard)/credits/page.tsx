@@ -95,11 +95,10 @@ export default function CreditsPage() {
 
         <Card className="flex flex-col p-6">
           <div className="flex items-center justify-between">
-            <p className="text-sm text-muted">Current plan</p>
-            <Badge tone="success">Active</Badge>
+            {activePlan && <p className="text-sm text-muted">Current plan</p>}{activePlan && <Badge tone="success">Active</Badge>}
           </div>
-          <h3 className="mt-1 text-2xl font-bold text-ink">Creator</h3>
-          <p className="mt-1 text-sm text-muted">$19/mo Â· 120 credits / month</p>
+          <h3 className="mt-1 text-2xl font-bold text-ink">{activePlan ? PLANS.find(p => p.id === activePlan)?.name ?? "Free" : "Free"}</h3>
+          {activePlan ? <p className="mt-1 text-sm text-muted">{PLANS.find(p => p.id === activePlan)?.blurb}</p> : <p className="mt-1 text-sm text-muted">5 free credits · no expiry</p>}
           <ul className="mt-4 flex-1 space-y-2 text-sm text-muted">
             <li className="flex items-center gap-2">
               <Icon name="check" size={15} className="text-success" /> 1080p exports, no watermark
@@ -300,5 +299,6 @@ export default function CreditsPage() {
     </div>
   );
 }
+
 
 

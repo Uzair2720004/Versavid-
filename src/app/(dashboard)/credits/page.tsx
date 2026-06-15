@@ -79,7 +79,7 @@ export default function CreditsPage() {
           </div>
           <ProgressBar value={usedPct} className="mt-4" height={10} />
           <p className="mt-2 text-xs text-muted">
-            {credits?.total_used ?? 0} of {allowance} monthly credits used
+            {allowance > 0 ? `${credits?.total_used ?? 0} of ${allowance} monthly credits used` : "One-time credits — never expire"}
           </p>
           <div className="mt-5 grid grid-cols-2 gap-3">
             <div className="rounded-xl border border-edge bg-canvas/70 px-4 py-3">
@@ -111,7 +111,7 @@ export default function CreditsPage() {
               <Icon name="check" size={15} className="text-success" /> Priority render queue
             </li>
           </ul>
-          <p className="mt-4 text-xs text-muted">Renews on {renewsOn}</p>
+          {allowance > 0 && <p className="mt-4 text-xs text-muted">Renews on {renewsOn}</p>}
         </Card>
       </div>
 
@@ -300,4 +300,5 @@ export default function CreditsPage() {
     </div>
   );
 }
+
 

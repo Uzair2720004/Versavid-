@@ -1,39 +1,81 @@
-﻿import { Card } from "@/components/ui/primitives";
-import { Icon, type IconName } from "@/components/ui/Icon";
+﻿'use client';
+import { motion } from 'framer-motion';
+import { useEffect, useState } from 'react';
+import { TrendingUp, Activity } from 'lucide-react';
 
-export function StatCard({
-  icon,
-  label,
-  value,
-  sub,
-  tone = "accent",
-}: {
-  icon: IconName;
+interface StatCardProps {
   label: string;
-  value: string | number;
-  sub?: string;
-  tone?: "accent" | "pink" | "success" | "warning";
-}) {
-  const toneMap: Record<string, { icon: string; bar: string; glow: string }> = {
-    accent: { icon: "bg-accent/15 text-accent-soft", bar: "from-accent to-accent-soft", glow: "rgba(127,119,221,0.08)" },
-    pink: { icon: "bg-pink/15 text-pink", bar: "from-pink to-pink/60", glow: "rgba(212,83,126,0.08)" },
-    success: { icon: "bg-success/15 text-success", bar: "from-success to-success/60", glow: "rgba(29,158,117,0.08)" },
-    warning: { icon: "bg-warning/15 text-warning", bar: "from-warning to-warning/60", glow: "rgba(186,117,23,0.08)" },
-  };
-  const t = toneMap[tone];
+  value: number;
+  suffix: string;
+  delta: string;
+  spark: number[];
+  delay: number;
+}
+
+function useCountUp(target: number, duration = 1200) {
+  const [n, setN] = useState(0);
+  useEffect(() => {
+    let raf = 0;
+    const start = performance.now();
+    const tick = (now: number) => {
+      const t = Math.min((now - start) / duration, 1);
+      const eased = t === 1 ? 1 : 1 - Math.pow(2, -10 * t);
+      setN(Math.round(eased * target));
+      if (t < 1) raf = requestAnimationFrame(tick);
+    };
+    raf = requestAnimationFrame(tick);
+    return () => cancelAnimationFrame(raf);
+  }, [target, duration]);
+  return n;
+}
+
+function Sparkline({ data }: { data: number[] }) {
+  const w = 120, h = 36;
+  const max = Math.max(...data), min = Math.min(...data);
+  const range = max - min || 1;
+  const pts = data.map((v, i) => [(i / (data.length - 1)) * w, h - ((v - min) / range) * h]);
+  const line = pts.map((p) => `${p[0]},${p[1]}`).join(' ');
+  const area = `0,${h} ${line} ${w},${h}`;
+  const gid = `spark-${Math.random().toString(36).slice(2, 8)}`;
   return (
-    <Card hover className="p-5 relative overflow-hidden" style={{ background: `radial-gradient(ellipse at top right, ${t.glow}, transparent 70%)` }}>
-      <div className={`absolute top-0 left-0 right-0 h-[2px] bg-gradient-to-r ${t.bar}`} />
-      <div className="flex items-start justify-between">
-        <div>
-          <p className="text-xs text-muted uppercase tracking-wider">{label}</p>
-          <p className="mt-2 text-3xl font-bold text-ink tracking-tight">{value}</p>
-        </div>
-        <span className={`flex h-10 w-10 items-center justify-center rounded-xl ${t.icon}`}>
-          <Icon name={icon} size={20} />
+    <svg viewBox={`0 0 ${w} ${h}`} className="w-full h-9" preserveAspectRatio="none">
+      <defs>
+        <linearGradient id={gid} x1="0" y1="0" x2="0" y2="1">
+          <stop offset="0%" stopColor="rgba(34,211,238,0.35)" />
+          <stop offset="100%" stopColor="rgba(34,211,238,0)" />
+        </linearGradient>
+      </defs>
+      <polygon points={area} fill={`url(#${gid})`} />
+      <polyline points={line} fill="none" stroke="rgba(34,211,238,0.9)" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
+    </svg>
+  );
+}
+
+export default function StatCard({ label, value, suffix, delta, spark, delay }: StatCardProps) {
+  const animated = useCountUp(value);
+  const isLive = delta === 'live';
+  return (
+    <motion.div
+      initial={{ opacity: 0, y: 30 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{ duration: 0.7, ease: [0.16, 1, 0.3, 1], delay }}
+      className="relative group rounded-2xl bg-[#0a0a0a] border border-white/5 p-5 hover:border-white/15 transition-colors duration-300 overflow-hidden"
+    >
+      <div className="absolute -top-10 -right-10 h-28 w-28 rounded-full bg-cyan-400/10 blur-3xl opacity-0 group-hover:opacity-100 transition-opacity duration-500 pointer-events-none" />
+      <div className="relative flex items-start justify-between">
+        <span className="text-[12px] text-[#767D88]">{label}</span>
+        <span className={`flex items-center gap-1 text-[11px] font-medium ${isLive ? 'text-cyan-400' : 'text-emerald-400'}`}>
+          {isLive ? <Activity className="h-3 w-3 animate-pulse" /> : <TrendingUp className="h-3 w-3" />}
+          {delta}
         </span>
       </div>
-      {sub && <p className="mt-3 text-xs text-muted">{sub}</p>}
-    </Card>
+      <div className="relative mt-3 text-[32px] font-bold tracking-tightest text-white leading-none">
+        {animated.toLocaleString()}
+        <span className="text-[16px] text-[#767D88] font-normal ml-1">{suffix}</span>
+      </div>
+      <div className="relative mt-4 -mx-1">
+        <Sparkline data={spark} />
+      </div>
+    </motion.div>
   );
 }

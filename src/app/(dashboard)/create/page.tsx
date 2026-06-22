@@ -1,521 +1,139 @@
-"use client";
+﻿'use client';
+import { useState, useMemo } from 'react';
+import { motion, AnimatePresence } from 'framer-motion';
+import { ArrowLeft, ArrowRight, Sparkles, Loader2, Check } from 'lucide-react';
+import { Topbar } from '@/components/dashboard/Topbar';
+import AmbientField from '@/components/dashboard/AmbientField';
+import StepIndicator from '@/components/create/StepIndicator';
+import Step1Script from '@/components/create/Step1Script';
+import Step2Media from '@/components/create/Step2Media';
+import Step3Voice from '@/components/create/Step3Voice';
+import Step4Review from '@/components/create/Step4Review';
+import SummaryPanel from '@/components/create/SummaryPanel';
+import { useRouter } from 'next/navigation';
 
-import { useState } from "react";
-import { useRouter } from "next/navigation";
-import { useApp } from "@/lib/store";
-import { PageHeader } from "@/components/dashboard/PageHeader";
-import { Card, Input, Textarea, Toggle } from "@/components/ui/primitives";
-import { Button } from "@/components/ui/Button";
-import { Icon } from "@/components/ui/Icon";
-import { OptionTile, PillGroup, SwatchTile, FieldLabel } from "@/components/create/controls";
-import { SummaryCard } from "@/components/create/SummaryCard";
-import {
-  FORMATS,
-  LENGTHS,
-  TONES,
-  MEDIA_TYPES,
-  PHOTO_STYLES,
-  VIDEO_STYLES,
-  VOICES,
-  LANGUAGES,
-  SPEEDS,
-  CAPTION_STYLES,
-  CAPTION_POSITIONS,
-  MUSIC_TRACKS,
-} from "@/lib/constants";
-import type { VideoSettings, VideoRecord } from "@/lib/types";
-import { cn, creditsForSettings } from "@/lib/utils";
-
-const STEPS = [
-  { n: 1, label: "Script" },
-  { n: 2, label: "Media & style" },
-  { n: 3, label: "Voice & captions" },
-  { n: 4, label: "Review" },
-];
-
-const DEFAULTS: VideoSettings = {
-  scriptMode: "ai",
-  topic: "",
-  format: "9:16",
-  length: "short",
-  tone: "Energetic",
-  mediaType: "both",
-  photoStyle: "cinematic",
-  videoStyle: "realistic",
-  referenceImage: null,
-  voice: "nova",
-  language: "en",
-  speed: "normal",
-  captionStyle: "bold-pop",
-  captionPosition: "bottom",
-  music: "uplifting",
-};
-
-export default function CreatePage() {
-  const router = useRouter();
-  const { credits, addVideo } = useApp();
+export default function CreateVideoPage() {
   const [step, setStep] = useState(1);
-  const [settings, setSettings] = useState<VideoSettings>(DEFAULTS);
-  const [customScript, setCustomScript] = useState("");
-  const [busy, setBusy] = useState(false);
+  const [generating, setGenerating] = useState(false);
+  const [done, setDone] = useState(false);
+  const [selections, setSelections] = useState<Record<string, any>>({ scriptMode: 'ai', lengthCredits: 0 });
+  const router = useRouter();
 
-  const set = <K extends keyof VideoSettings>(key: K, value: VideoSettings[K]) =>
-    setSettings((s) => ({ ...s, [key]: value }));
+  const update = (key: string, value: any) => setSelections((prev) => ({ ...prev, [key]: value }));
 
-  const canGenerate = settings.topic.trim().length > 0 || (settings.scriptMode === "upload" && customScript.trim().length > 0);
+  const credits = useMemo(() => {
+    const base = selections.lengthCredits || 0;
+    const voice = selections.voice ? 2 : 0;
+    const media = selections.mediaType ? 3 : 0;
+    const captions = selections.captionStyle ? 1 : 0;
+    return base + voice + media + captions;
+  }, [selections]);
 
-  function handleReferenceUpload(e: React.ChangeEvent<HTMLInputElement>) {
-    const file = e.target.files?.[0];
-    if (!file) return;
-    const reader = new FileReader();
-    reader.onload = () => set("referenceImage", reader.result as string);
-    reader.readAsDataURL(file);
-  }
+  const stepValid = useMemo(() => {
+    if (step === 1) return selections.topic && selections.format && selections.length && selections.tone;
+    if (step === 2) {
+      if (!selections.mediaType) return false;
+      if (selections.mediaType === 'images' && !selections.photoStyle) return false;
+      if (selections.mediaType === 'videos' && !selections.videoStyle) return false;
+      if (selections.mediaType === 'mixed' && (!selections.photoStyle || !selections.videoStyle)) return false;
+      return true;
+    }
+    if (step === 3) return selections.voice && selections.language && selections.speed && selections.captionStyle;
+    return true;
+  }, [step, selections]);
 
-  function handleGenerate() {
+  const canGenerate = useMemo(() => {
+    return selections.topic && selections.format && selections.length && selections.tone &&
+      selections.mediaType && selections.voice && selections.language && selections.speed && selections.captionStyle;
+  }, [selections]);
+
+  const handleGenerate = () => {
     if (!canGenerate) return;
-    setBusy(true);
-    // Real UUID so it satisfies the `videos.id` uuid column when persisted.
-    const id = crypto.randomUUID();
-    const title =
-      settings.topic.trim() ||
-      customScript.trim().split("\n")[0].slice(0, 60) ||
-      "Untitled video";
-    const video: VideoRecord = {
-      id,
-      user_id: "me",
-      title,
-      topic: settings.topic,
-      format: settings.format,
-      status: "queued",
-      script: settings.scriptMode === "upload" ? customScript : null,
-      video_url: null,
-      thumbnail_url: null,
-      credits_used: creditsForSettings(settings),
-      duration: settings.length === "long" ? 150 : settings.length === "medium" ? 45 : 25,
-      settings: { ...settings, topic: settings.topic || title },
-      created_at: new Date().toISOString(),
-    };
-    addVideo(video);
-    router.push(`/generate/${id}`);
-  }
+    setGenerating(true);
+    setTimeout(() => { setGenerating(false); setDone(true); }, 3000);
+  };
+
+  const handleReset = () => { setDone(false); setStep(1); setSelections({ scriptMode: 'ai', lengthCredits: 0 }); };
 
   return (
-    <div className="mx-auto max-w-7xl px-5 py-8 sm:px-8">
-      <PageHeader title="Create a video" subtitle="Four quick steps from idea to publish-ready." />
-
-      {/* Stepper */}
-      <div className="mt-6 flex items-center gap-2 overflow-x-auto pb-2 no-scrollbar">
-        {STEPS.map((s, i) => {
-          const active = step === s.n;
-          const done = step > s.n;
-          return (
-            <div key={s.n} className="flex items-center gap-2">
-              <button
-                onClick={() => setStep(s.n)}
-                className={cn(
-                  "flex items-center gap-2.5 rounded-full border px-4 py-2 text-sm transition-colors",
-                  active
-                    ? "border-accent/60 bg-accent/10 text-ink"
-                    : done
-                      ? "border-success/40 bg-success/10 text-success"
-                      : "border-edge bg-canvas text-muted hover:text-ink"
-                )}
-              >
-                <span
-                  className={cn(
-                    "flex h-6 w-6 items-center justify-center rounded-full text-xs font-bold",
-                    active ? "gradient-bg text-white" : done ? "bg-success text-canvas" : "bg-panel-2 text-muted"
-                  )}
-                >
-                  {done ? <Icon name="check" size={13} /> : s.n}
-                </span>
-                <span className="whitespace-nowrap font-medium">{s.label}</span>
-              </button>
-              {i < STEPS.length - 1 && <span className="h-px w-6 shrink-0 bg-edge" />}
-            </div>
-          );
-        })}
+    <div className="relative min-h-screen bg-black flex">
+      <div className="fixed inset-0 z-0 pointer-events-none">
+        <AmbientField variant="mixed" />
       </div>
-
-      <div className="mt-6 grid gap-6 lg:grid-cols-[1fr_340px]">
-        {/* Main step content */}
-        <Card className="p-6 sm:p-8">
-          {step === 1 && (
-            <div className="space-y-7 animate-fade-up">
-              <div>
-                <FieldLabel hint="Let AI write the script, or bring your own.">Script source</FieldLabel>
-                <div className="flex items-center gap-3 rounded-xl border border-edge bg-canvas p-1.5">
-                  {(["ai", "upload"] as const).map((mode) => (
-                    <button
-                      key={mode}
-                      onClick={() => set("scriptMode", mode)}
-                      className={cn(
-                        "flex-1 rounded-lg px-4 py-2.5 text-sm font-medium transition-colors",
-                        settings.scriptMode === mode ? "gradient-bg text-white" : "text-muted hover:text-ink"
-                      )}
-                    >
-                      {mode === "ai" ? "✨ AI generate" : "📝 Upload my script"}
-                    </button>
-                  ))}
-                </div>
+      <div className="relative z-10 flex w-full">
+        <div className="flex-1 min-w-0 flex flex-col">
+          <Topbar />
+          <main className="flex-1 px-6 lg:px-8 py-8">
+            <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.7, ease: [0.16, 1, 0.3, 1] }} className="mb-8">
+              <div className="flex items-center gap-2 mb-3">
+                <Sparkles className="h-4 w-4 text-fuchsia-400" />
+                <span className="text-[12px] text-fuchsia-400 font-medium">Create Video</span>
               </div>
+              <h1 className="text-[32px] sm:text-[40px] font-bold leading-[1.0] tracking-tightest text-gradient">
+                {done ? 'Video generated' : 'Create a new video'}
+              </h1>
+              <p className="mt-2 text-[14px] text-[#a8aeb8]">
+                {done ? 'Your video is ready to review and publish.' : 'Follow the steps to configure your AI-generated video.'}
+              </p>
+            </motion.div>
 
-              <div>
-                <FieldLabel hint="What should the video be about?">Topic</FieldLabel>
-                <Input
-                  value={settings.topic}
-                  onChange={(e) => set("topic", e.target.value)}
-                  placeholder="e.g. 5 AI tools that feel illegal to know"
-                />
-              </div>
-
-              {settings.scriptMode === "upload" && (
-                <div>
-                  <FieldLabel hint="Paste your script — we'll narrate and visualize it.">Your script</FieldLabel>
-                  <Textarea
-                    rows={6}
-                    value={customScript}
-                    onChange={(e) => setCustomScript(e.target.value)}
-                    placeholder="[HOOK] ...\n[SCENE 2] ...\n[CTA] ..."
-                  />
-                </div>
-              )}
-
-              <div>
-                <FieldLabel>Format</FieldLabel>
-                <div className="grid gap-3 sm:grid-cols-2">
-                  {FORMATS.map((f) => (
-                    <OptionTile
-                      key={f.value}
-                      selected={settings.format === f.value}
-                      onClick={() => set("format", f.value)}
-                      title={`${f.label} · ${f.value}`}
-                      sub={f.sub}
-                      icon={f.value === "9:16" ? "aspect" : "video"}
-                    />
-                  ))}
-                </div>
-              </div>
-
-              <div>
-                <FieldLabel>Length</FieldLabel>
-                <PillGroup
-                  value={settings.length}
-                  onChange={(v) => set("length", v)}
-                  options={LENGTHS.map((l) => ({ value: l.value, label: l.label, sub: l.sub }))}
-                />
-              </div>
-
-              <div>
-                <FieldLabel>Tone</FieldLabel>
-                <div className="flex flex-wrap gap-2">
-                  {TONES.map((t) => (
-                    <button
-                      key={t}
-                      onClick={() => set("tone", t)}
-                      className={cn(
-                        "rounded-lg border px-3.5 py-2 text-sm transition-colors",
-                        settings.tone === t
-                          ? "border-accent/70 bg-accent/10 text-ink"
-                          : "border-edge bg-canvas text-muted hover:text-ink"
-                      )}
-                    >
-                      {t}
-                    </button>
-                  ))}
-                </div>
-              </div>
-            </div>
-          )}
-
-          {step === 2 && (
-            <div className="space-y-7 animate-fade-up">
-              <div>
-                <FieldLabel hint="Choose what your scenes are built from.">Media type</FieldLabel>
-                <div className="grid gap-3 sm:grid-cols-3">
-                  {MEDIA_TYPES.map((m) => (
-                    <OptionTile
-                      key={m.value}
-                      selected={settings.mediaType === m.value}
-                      onClick={() => set("mediaType", m.value)}
-                      title={m.label}
-                      sub={m.sub}
-                      icon={m.icon as "image"}
-                    />
-                  ))}
-                </div>
-              </div>
-
-              {settings.mediaType !== "videos" && (
-                <div>
-                  <FieldLabel>Photo style</FieldLabel>
-                  <div className="grid grid-cols-2 gap-3 sm:grid-cols-3">
-                    {PHOTO_STYLES.map((s) => (
-                      <SwatchTile
-                        key={s.value}
-                        selected={settings.photoStyle === s.value}
-                        onClick={() => set("photoStyle", s.value)}
-                        label={s.label}
-                        swatch={s.swatch}
-                      />
-                    ))}
+            {done ? (
+              <motion.div initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }} transition={{ duration: 0.6, ease: [0.16, 1, 0.3, 1] }} className="max-w-2xl mx-auto text-center py-16">
+                <motion.div initial={{ scale: 0 }} animate={{ scale: 1 }} transition={{ duration: 0.6, ease: [0.16, 1, 0.3, 1], delay: 0.2 }} className="relative inline-block mb-8">
+                  <div className="absolute inset-0 rounded-full bg-emerald-400/30 blur-2xl" />
+                  <div className="relative h-24 w-24 rounded-full bg-gradient-to-br from-emerald-400 to-teal-500 flex items-center justify-center">
+                    <Check className="h-12 w-12 text-white" strokeWidth={3} />
                   </div>
+                </motion.div>
+                <h2 className="text-[28px] font-bold tracking-tight text-white mb-3">Your video is ready!</h2>
+                <p className="text-[14px] text-[#a8aeb8] max-w-md mx-auto mb-8">
+                  Versavid has generated your video using {credits} credits. You can review it in your videos, schedule it for publishing, or create another one.
+                </p>
+                <div className="flex flex-col sm:flex-row items-center justify-center gap-3">
+                  <button onClick={() => router.push('/videos')} className="inline-flex items-center gap-2 rounded-full bg-white px-6 py-3 text-[14px] font-semibold text-black hover:scale-[1.03] transition-transform duration-300">
+                    <Sparkles className="h-4 w-4" /> View my videos
+                  </button>
+                  <button onClick={handleReset} className="inline-flex items-center gap-2 rounded-full glass px-6 py-3 text-[14px] font-medium text-white hover:bg-white/10 transition-colors duration-300">
+                    Create another
+                  </button>
                 </div>
-              )}
-
-              {settings.mediaType !== "images" && (
-                <div>
-                  <FieldLabel>Video clip style</FieldLabel>
-                  <div className="grid grid-cols-2 gap-3 sm:grid-cols-3">
-                    {VIDEO_STYLES.map((s) => (
-                      <SwatchTile
-                        key={s.value}
-                        selected={settings.videoStyle === s.value}
-                        onClick={() => set("videoStyle", s.value)}
-                        label={s.label}
-                        swatch={s.swatch}
-                      />
-                    ))}
-                  </div>
-                </div>
-              )}
-
-              <div>
-                <FieldLabel hint="Optional — guide the look with a reference image.">Reference image</FieldLabel>
-                <label className="flex cursor-pointer items-center gap-4 rounded-xl border border-dashed border-edge-strong bg-canvas p-4 transition-colors hover:border-accent/60">
-                  {settings.referenceImage ? (
-                    // eslint-disable-next-line @next/next/no-img-element
-                    <img src={settings.referenceImage} alt="reference" className="h-16 w-16 rounded-lg object-cover" />
-                  ) : (
-                    <span className="flex h-16 w-16 items-center justify-center rounded-lg bg-panel-2 text-muted">
-                      <Icon name="upload" size={22} />
-                    </span>
-                  )}
-                  <div className="flex-1">
-                    <p className="text-sm font-medium text-ink">
-                      {settings.referenceImage ? "Reference added" : "Upload a reference image"}
-                    </p>
-                    <p className="text-xs text-muted">PNG or JPG, up to 10MB</p>
-                  </div>
-                  {settings.referenceImage && (
-                    <button
-                      type="button"
-                      onClick={(e) => {
-                        e.preventDefault();
-                        set("referenceImage", null);
-                      }}
-                      className="rounded-lg p-2 text-muted hover:text-pink"
-                    >
-                      <Icon name="trash" size={16} />
-                    </button>
-                  )}
-                  <input type="file" accept="image/*" className="hidden" onChange={handleReferenceUpload} />
-                </label>
-              </div>
-            </div>
-          )}
-
-          {step === 3 && (
-            <div className="space-y-7 animate-fade-up">
-              <div>
-                <FieldLabel hint="Pick the narrator for your video.">Voice</FieldLabel>
-                <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
-                  {VOICES.map((v) => (
-                    <button
-                      key={v.value}
-                      onClick={() => set("voice", v.value)}
-                      className={cn(
-                        "flex flex-col items-start gap-2 rounded-xl border p-3 text-left transition-all",
-                        settings.voice === v.value
-                          ? "border-accent/70 bg-accent/10"
-                          : "border-edge bg-canvas hover:border-edge-strong"
-                      )}
-                    >
-                      <span
-                        className="flex h-9 w-9 items-center justify-center rounded-full text-white"
-                        style={{ background: v.swatch }}
-                      >
-                        <Icon name="mic" size={16} />
-                      </span>
-                      <span className="text-sm font-semibold text-ink">{v.name}</span>
-                      <span className="text-[11px] text-muted">{v.tag}</span>
-                    </button>
-                  ))}
-                </div>
-              </div>
-
-              <div className="grid gap-6 sm:grid-cols-2">
-                <div>
-                  <FieldLabel>Language</FieldLabel>
-                  <div className="flex flex-wrap gap-2">
-                    {LANGUAGES.map((l) => (
-                      <button
-                        key={l.value}
-                        onClick={() => set("language", l.value)}
-                        className={cn(
-                          "flex items-center gap-2 rounded-lg border px-3 py-2 text-sm transition-colors",
-                          settings.language === l.value
-                            ? "border-accent/70 bg-accent/10 text-ink"
-                            : "border-edge bg-canvas text-muted hover:text-ink"
-                        )}
-                      >
-                        <span>{l.flag}</span>
-                        {l.label}
-                      </button>
-                    ))}
-                  </div>
-                </div>
-                <div>
-                  <FieldLabel>Speed</FieldLabel>
-                  <PillGroup
-                    value={settings.speed}
-                    onChange={(v) => set("speed", v)}
-                    options={SPEEDS.map((s) => ({ value: s.value, label: s.label, sub: s.sub }))}
-                  />
-                </div>
-              </div>
-
-              <div>
-                <FieldLabel>Caption style</FieldLabel>
-                <div className="grid grid-cols-2 gap-3 sm:grid-cols-3">
-                  {CAPTION_STYLES.map((c) => (
-                    <button
-                      key={c.value}
-                      onClick={() => set("captionStyle", c.value)}
-                      className={cn(
-                        "flex flex-col items-center justify-center gap-2 rounded-xl border py-5 transition-all",
-                        settings.captionStyle === c.value
-                          ? "border-accent/70 bg-accent/10"
-                          : "border-edge bg-canvas hover:border-edge-strong"
-                      )}
-                    >
-                      <span className="text-sm font-bold gradient-text">{c.preview}</span>
-                      <span className="text-xs text-muted">{c.label}</span>
-                    </button>
-                  ))}
-                </div>
-              </div>
-
-              <div>
-                <FieldLabel>Caption position</FieldLabel>
-                <PillGroup
-                  value={settings.captionPosition}
-                  onChange={(v) => set("captionPosition", v)}
-                  options={CAPTION_POSITIONS.map((p) => ({ value: p.value, label: p.label }))}
-                />
-              </div>
-
-              <div>
-                <FieldLabel>Background music</FieldLabel>
-                <div className="flex flex-wrap gap-2">
-                  {MUSIC_TRACKS.map((m) => (
-                    <button
-                      key={m.value}
-                      onClick={() => set("music", m.value)}
-                      className={cn(
-                        "rounded-lg border px-3.5 py-2 text-sm transition-colors",
-                        settings.music === m.value
-                          ? "border-accent/70 bg-accent/10 text-ink"
-                          : "border-edge bg-canvas text-muted hover:text-ink"
-                      )}
-                    >
-                      {m.label}
-                    </button>
-                  ))}
-                </div>
-              </div>
-            </div>
-          )}
-
-          {step === 4 && (
-            <div className="space-y-6 animate-fade-up">
-              <div className="flex items-center gap-3">
-                <span className="flex h-10 w-10 items-center justify-center rounded-xl gradient-bg text-white">
-                  <Icon name="check" size={20} />
-                </span>
-                <div>
-                  <h3 className="font-semibold text-ink">Everything looks good?</h3>
-                  <p className="text-sm text-muted">Review your settings, then generate.</p>
-                </div>
-              </div>
-
-              <div className="grid gap-3 sm:grid-cols-2">
-                <ReviewRow label="Topic" value={settings.topic || "—"} />
-                <ReviewRow label="Format" value={settings.format} />
-                <ReviewRow label="Length" value={settings.length} />
-                <ReviewRow label="Tone" value={settings.tone} />
-                <ReviewRow label="Media type" value={settings.mediaType} />
-                <ReviewRow label="Photo style" value={settings.photoStyle} />
-                <ReviewRow label="Clip style" value={settings.videoStyle} />
-                <ReviewRow label="Voice" value={VOICES.find((v) => v.value === settings.voice)?.name ?? ""} />
-                <ReviewRow label="Language" value={LANGUAGES.find((l) => l.value === settings.language)?.label ?? ""} />
-                <ReviewRow label="Speed" value={settings.speed} />
-                <ReviewRow label="Captions" value={`${settings.captionStyle} · ${settings.captionPosition}`} />
-                <ReviewRow label="Music" value={settings.music} />
-              </div>
-
-              <div className="flex items-center justify-between rounded-xl border border-accent/30 bg-accent/10 px-5 py-4">
-                <div className="flex items-center gap-2.5">
-                  <Icon name="coins" size={18} className="text-accent-soft" />
-                  <span className="text-sm text-ink">This video will cost</span>
-                </div>
-                <span className="text-2xl font-bold text-ink">{creditsForSettings(settings)} credits</span>
-              </div>
-
-              {settings.scriptMode === "upload" && (
-                <label className="flex items-center justify-between rounded-xl border border-edge bg-canvas px-4 py-3">
-                  <span className="text-sm text-muted">Using your uploaded script</span>
-                  <Toggle checked disabled onChange={() => {}} />
-                </label>
-              )}
-            </div>
-          )}
-
-          {/* Footer nav */}
-          <div className="mt-8 flex items-center justify-between border-t border-edge pt-6">
-            <Button
-              variant="ghost"
-              onClick={() => setStep((s) => Math.max(1, s - 1))}
-              disabled={step === 1}
-            >
-              <Icon name="chevron-left" size={16} />
-              Back
-            </Button>
-            {step < 4 ? (
-              <Button onClick={() => setStep((s) => Math.min(4, s + 1))}>
-                Continue
-                <Icon name="chevron-right" size={16} />
-              </Button>
+              </motion.div>
             ) : (
-              <Button onClick={handleGenerate} disabled={!canGenerate || busy}>
-                <Icon name="sparkles" size={16} />
-                Generate
-              </Button>
+              <div className="flex gap-8">
+                <div className="flex-1 min-w-0">
+                  <div className="mb-8"><StepIndicator current={step} onStepClick={setStep} /></div>
+                  <div className="max-w-2xl">
+                    <AnimatePresence mode="wait">
+                      {step === 1 && <Step1Script key="s1" selections={selections} update={update} />}
+                      {step === 2 && <Step2Media key="s2" selections={selections} update={update} />}
+                      {step === 3 && <Step3Voice key="s3" selections={selections} update={update} />}
+                      {step === 4 && <Step4Review key="s4" selections={selections} credits={credits} />}
+                    </AnimatePresence>
+                  </div>
+                  <div className="flex items-center justify-between mt-10 max-w-2xl">
+                    <button onClick={() => setStep((s) => Math.max(1, s - 1))} disabled={step === 1}
+                      className={'flex items-center gap-2 h-11 px-5 rounded-xl text-[13px] font-medium transition-all duration-300 ' + (step === 1 ? 'opacity-30 cursor-not-allowed text-[#767D88]' : 'glass text-white hover:bg-white/10')}>
+                      <ArrowLeft className="h-4 w-4" /> Back
+                    </button>
+                    {step < 4 ? (
+                      <button onClick={() => setStep((s) => Math.min(4, s + 1))} disabled={!stepValid}
+                        className={'flex items-center gap-2 h-11 px-6 rounded-xl text-[13px] font-medium transition-all duration-300 ' + (stepValid ? 'bg-gradient-to-r from-fuchsia-500 to-purple-600 text-white hover:scale-[1.03]' : 'bg-white/5 text-[#767D88] cursor-not-allowed')}>
+                        Continue <ArrowRight className="h-4 w-4" />
+                      </button>
+                    ) : (
+                      <button onClick={handleGenerate} disabled={generating}
+                        className="flex items-center gap-2 h-11 px-6 rounded-xl text-[13px] font-medium bg-gradient-to-r from-fuchsia-500 to-purple-600 text-white hover:scale-[1.03] transition-all duration-300 disabled:opacity-70">
+                        {generating ? <><Loader2 className="h-4 w-4 animate-spin" /> Generating...</> : <><Sparkles className="h-4 w-4" /> Generate Video</>}
+                      </button>
+                    )}
+                  </div>
+                </div>
+                <SummaryPanel selections={selections} credits={credits} onGenerate={() => { setStep(4); if (canGenerate) handleGenerate(); }} canGenerate={!!canGenerate} />
+              </div>
             )}
-          </div>
-        </Card>
-
-        {/* Always-visible summary sidebar */}
-        <div className="lg:sticky lg:top-8 lg:self-start">
-          <SummaryCard
-            settings={settings}
-            credits={credits?.balance ?? 0}
-            onGenerate={handleGenerate}
-            busy={busy}
-            canGenerate={canGenerate}
-          />
+          </main>
         </div>
       </div>
-    </div>
-  );
-}
-
-function ReviewRow({ label, value }: { label: string; value: string }) {
-  return (
-    <div className="rounded-xl border border-edge bg-canvas px-4 py-3">
-      <p className="text-xs text-muted">{label}</p>
-      <p className="mt-0.5 text-sm font-medium capitalize text-ink">{value}</p>
     </div>
   );
 }

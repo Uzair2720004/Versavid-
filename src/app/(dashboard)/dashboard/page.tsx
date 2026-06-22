@@ -1,126 +1,102 @@
-"use client";
+﻿'use client';
+import { useState } from 'react';
+import { motion } from 'framer-motion';
+import { Sparkles, Wand2 } from 'lucide-react';
+import { useRouter } from 'next/navigation';
+import { Topbar } from '@/components/dashboard/Topbar';
+import EmptyStatCard from '@/components/dashboard/EmptyStatCard';
+import ProjectsEmpty from '@/components/dashboard/ProjectsEmpty';
+import AmbientField from '@/components/dashboard/AmbientField';
+import { useApp } from '@/lib/store';
 
-import Link from "next/link";
-import { useRouter } from "next/navigation";
-import { useApp } from "@/lib/store";
-import { PageHeader } from "@/components/dashboard/PageHeader";
-import { StatCard } from "@/components/dashboard/StatCard";
-import { VideoCard } from "@/components/dashboard/VideoCard";
-import { Card, ProgressBar } from "@/components/ui/primitives";
-import { ButtonLink } from "@/components/ui/Button";
-import { Icon, type IconName } from "@/components/ui/Icon";
-import { formatDuration } from "@/lib/utils";
-
-const QUICK_ACTIONS: { href: string; label: string; desc: string; icon: IconName }[] = [
-  { href: "/create", label: "New video", desc: "Start the creation wizard", icon: "plus" },
-  { href: "/videos", label: "My videos", desc: "Browse & download", icon: "video" },
-  { href: "/credits", label: "Buy credits", desc: "Top up your balance", icon: "coins" },
-  { href: "/settings", label: "Defaults", desc: "Set your brand presets", icon: "settings" },
+const emptyStats = [
+  { label: 'Videos created', hint: 'Your created videos will be counted here.', accent: 'rgba(34,211,238,0.12)' },
+  { label: 'Credits remaining', hint: '15 free credits to get you started.', accent: 'rgba(168,85,247,0.12)' },
+  { label: 'Videos this month', hint: 'New videos you create this month.', accent: 'rgba(236,72,153,0.12)' },
+  { label: 'Credits used', hint: 'Credits consumed by your generations.', accent: 'rgba(59,130,246,0.12)' },
 ];
 
 export default function DashboardPage() {
-  const { profile, credits, videos } = useApp();
+  const { profile } = useApp();
   const router = useRouter();
-
-  const firstName = profile?.full_name?.split(" ")[0] || "Creator";
-  const ready = videos.filter((v) => v.status === "ready");
-  const shorts = videos.filter((v) => v.format === "9:16");
-  const totalSeconds = ready.reduce((acc, v) => acc + v.duration, 0);
-  // assume ~45 min of manual editing saved per finished video
-  const timeSavedHrs = Math.round((ready.length * 45) / 60 * 10) / 10;
-
-  const allowance = credits?.monthly_allowance || 120;
-  const usedPct = credits ? Math.min(100, (credits.total_used / allowance) * 100) : 0;
-  const recent = videos.slice(0, 4);
+  const [prompt, setPrompt] = useState('');
+  const userName = profile?.full_name?.split(' ')[0] || 'there';
+  const handleGenerate = () => router.push('/create');
 
   return (
-    <div className="mx-auto max-w-7xl px-5 py-8 sm:px-8">
-      <PageHeader
-        title={
-          <>
-            Welcome back, <span className="gradient-text">{firstName}</span>
-          </>
-        }
-        subtitle="Here's what's happening in your studio today."
-        action={
-          <ButtonLink href="/create">
-            <Icon name="plus" size={18} />
-            Create video
-          </ButtonLink>
-        }
-      />
-
-      {/* Stats */}
-      <div className="mt-8 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-        <StatCard icon="video" label="Videos created" value={videos.length} sub={`${ready.length} ready to publish`} tone="accent" />
-        <StatCard icon="coins" label="Credits used" value={credits?.total_used ?? 0} sub={`${credits?.balance ?? 0} remaining`} tone="pink" />
-        <StatCard icon="aspect" label="Shorts made" value={shorts.length} sub={`${formatDuration(totalSeconds)} total runtime`} tone="success" />
-        <StatCard icon="clock" label="Time saved" value={`${timeSavedHrs}h`} sub="vs. manual editing" tone="warning" />
+    <div className="relative min-h-screen bg-black flex">
+      <div className="fixed inset-0 z-0 pointer-events-none">
+        <AmbientField variant="mixed" />
       </div>
+      <div className="relative z-10 flex w-full">
+        <div className="flex-1 min-w-0 flex flex-col">
+          <Topbar />
+          <main className="flex-1 px-6 lg:px-8 py-8 space-y-8">
 
-      {/* Credits usage */}
-      <Card className="mt-6 p-6">
-        <div className="flex flex-wrap items-center justify-between gap-4">
-          <div>
-            <h2 className="font-semibold text-ink">Monthly credit usage</h2>
-            <p className="mt-1 text-sm text-muted">
-              {credits?.total_used ?? 0} of {allowance} credits used · resets in 12 days
-            </p>
-          </div>
-          <ButtonLink href="/credits" variant="secondary" size="sm">
-            Manage plan
-          </ButtonLink>
-        </div>
-        <ProgressBar value={usedPct} className="mt-4" height={10} />
-        <div className="mt-2 flex justify-between text-xs text-muted">
-          <span>{credits?.balance ?? 0} credits available</span>
-          <span>{Math.round(usedPct)}%</span>
-        </div>
-      </Card>
-
-      {/* Recent videos */}
-      <div className="mt-10">
-        <div className="mb-4 flex items-center justify-between">
-          <h2 className="text-lg font-semibold text-ink">Recent videos</h2>
-          <Link href="/videos" className="text-sm text-accent-soft hover:underline">
-            View all
-          </Link>
-        </div>
-        <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
-          {recent.map((v) => (
-            <VideoCard key={v.id} video={v} compact onOpen={() => router.push("/videos")} />
-          ))}
-          {/* Create new card */}
-          <Link
-            href="/create"
-            className="group flex min-h-[220px] flex-col items-center justify-center gap-3 rounded-card border border-dashed border-edge-strong bg-panel/40 p-6 text-center transition-all duration-200 hover:border-accent/60 hover:bg-panel-2"
-          >
-            <span className="flex h-12 w-12 items-center justify-center rounded-xl gradient-bg text-white transition-transform group-hover:scale-110">
-              <Icon name="plus" size={22} />
-            </span>
-            <span className="text-sm font-medium text-ink">Create a new video</span>
-            <span className="text-xs text-muted">Idea → published in minutes</span>
-          </Link>
-        </div>
-      </div>
-
-      {/* Quick actions */}
-      <div className="mt-10">
-        <h2 className="mb-4 text-lg font-semibold text-ink">Quick actions</h2>
-        <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-          {QUICK_ACTIONS.map((a) => (
-            <Link key={a.href} href={a.href}>
-              <Card hover className="flex items-center gap-4 p-5">
-                <span className="flex h-11 w-11 items-center justify-center rounded-xl gradient-bg-soft text-accent-soft">
-                  <Icon name={a.icon} size={20} />
-                </span>
+            {/* Hero banner */}
+            <motion.section
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.7, ease: [0.16, 1, 0.3, 1] }}
+              className="relative overflow-hidden rounded-2xl border border-white/5"
+            >
+              <video autoPlay muted loop playsInline className="absolute inset-0 h-full w-full object-cover opacity-30">
+                <source src="/videos/hero-bg.mp4" type="video/mp4" />
+              </video>
+              <div className="absolute inset-0 bg-gradient-to-r from-black via-black/70 to-black/30" />
+              <div className="relative z-10 p-6 lg:p-8 flex flex-col lg:flex-row lg:items-center justify-between gap-6">
                 <div>
-                  <p className="text-sm font-semibold text-ink">{a.label}</p>
-                  <p className="text-xs text-muted">{a.desc}</p>
+                  <p className="text-[12px] text-cyan-400 mb-2 flex items-center gap-1.5">
+                    <Sparkles className="h-3.5 w-3.5" />
+                    Welcome to Versavid, {userName}
+                  </p>
+                  <h1 className="text-[28px] sm:text-[34px] font-bold tracking-tightest text-white leading-[1.05]">
+                    Create your first video
+                  </h1>
+                  <p className="mt-2 text-[14px] text-[#a8aeb8] max-w-md">
+                    Type any topic and Versavid writes the script, generates visuals, adds voiceover and captions.
+                  </p>
                 </div>
-              </Card>
-            </Link>
-          ))}
+                <div className="w-full lg:max-w-md">
+                  <div className="glass-strong rounded-xl p-2 flex items-center gap-2">
+                    <Sparkles className="h-4 w-4 text-cyan-400 shrink-0 ml-1" />
+                    <input
+                      type="text"
+                      value={prompt}
+                      onChange={(e) => setPrompt(e.target.value)}
+                      placeholder="Enter a topic for your video..."
+                      className="flex-1 bg-transparent text-[13px] text-white placeholder:text-[#767D88] focus:outline-none py-2"
+                    />
+                    <button
+                      onClick={handleGenerate}
+                      className="h-9 px-4 rounded-lg bg-white text-black text-[13px] font-medium hover:scale-[1.03] transition-transform flex items-center gap-1.5 shrink-0"
+                    >
+                      <Wand2 className="h-3.5 w-3.5" /> Generate
+                    </button>
+                  </div>
+                </div>
+              </div>
+            </motion.section>
+
+            {/* Empty stat cards */}
+            <section className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+              {emptyStats.map((s, i) => (
+                <EmptyStatCard key={s.label} {...s} delay={0.15 + i * 0.08} />
+              ))}
+            </section>
+
+            {/* Empty projects */}
+            <section>
+              <div className="flex items-center justify-between mb-5">
+                <div>
+                  <h2 className="text-[18px] font-semibold text-white">Recent videos</h2>
+                  <p className="text-[12px] text-[#767D88] mt-0.5">Nothing here yet</p>
+                </div>
+              </div>
+              <ProjectsEmpty onCreate={handleGenerate} />
+            </section>
+
+          </main>
         </div>
       </div>
     </div>

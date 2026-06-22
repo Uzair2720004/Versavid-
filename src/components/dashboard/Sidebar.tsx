@@ -1,156 +1,93 @@
-"use client";
+﻿'use client';
+import { motion } from 'framer-motion';
+import { usePathname, useRouter } from 'next/navigation';
+import Link from 'next/link';
+import { LayoutGrid, Folder, BarChart3, Settings, ArrowLeft, CreditCard, Wand2 } from 'lucide-react';
+import { useApp } from '@/lib/store';
 
-import { useState } from "react";
-import Link from "next/link";
-import { usePathname, useRouter } from "next/navigation";
-import { Icon, type IconName } from "@/components/ui/Icon";
-import { ProgressBar } from "@/components/ui/primitives";
-import { Button } from "@/components/ui/Button";
-import { useApp } from "@/lib/store";
-import { cn } from "@/lib/utils";
-
-const NAV: { href: string; label: string; icon: IconName }[] = [
-  { href: "/dashboard", label: "Dashboard", icon: "dashboard" },
-  { href: "/videos", label: "My Videos", icon: "video" },
-  { href: "/create", label: "Create Video", icon: "plus" },
-  { href: "/credits", label: "Credits", icon: "coins" },
-  { href: "/analytics", label: "Analytics", icon: "chart" },
-  { href: "/settings", label: "Settings", icon: "settings" },
+const sidebarLinks = [
+  { label: 'Dashboard', icon: 'LayoutGrid', href: '/dashboard' },
+  { label: 'Create Video', icon: 'Wand2', href: '/create' },
+  { label: 'My Videos', icon: 'Folder', href: '/videos' },
+  { label: 'Credits', icon: 'CreditCard', href: '/credits' },
+  { label: 'Analytics', icon: 'BarChart3', href: '/analytics' },
+  { label: 'Settings', icon: 'Settings', href: '/settings' },
 ];
 
-function NavLinks({ onNavigate }: { onNavigate?: () => void }) {
-  const pathname = usePathname();
-  return (
-    <nav className="flex flex-1 flex-col gap-1">
-      {NAV.map((item) => {
-        const active = pathname === item.href || (item.href !== "/dashboard" && pathname.startsWith(item.href));
-        return (
-          <Link
-            key={item.href}
-            href={item.href}
-            onClick={onNavigate}
-            className={cn(
-              "group flex items-center gap-3 rounded-[10px] px-3 py-2.5 text-sm font-medium transition-all duration-200",
-              active ? "bg-panel-2 text-ink" : "text-muted hover:bg-panel-2/60 hover:text-ink"
-            )}
-          >
-            <span
-              className={cn(
-                "flex h-8 w-8 items-center justify-center rounded-lg transition-colors",
-                active ? "gradient-bg text-white" : "bg-panel text-muted group-hover:text-ink"
-              )}
-            >
-              <Icon name={item.icon} size={17} />
-            </span>
-            {item.label}
-          </Link>
-        );
-      })}
-    </nav>
-  );
-}
-
-function CreditWidget() {
-  const { credits } = useApp();
-  if (!credits) return null;
-  const used = credits.total_used;
-  const allowance = credits.monthly_allowance || 120;
-  const pct = Math.min(100, (used / allowance) * 100);
-  return (
-    <div className="rounded-card border border-edge bg-panel p-4">
-      <div className="flex items-center justify-between text-sm">
-        <span className="flex items-center gap-2 font-medium text-ink">
-          <Icon name="coins" size={16} className="text-accent-soft" />
-          Credits
-        </span>
-        <span className="font-semibold text-ink">{credits.balance}</span>
-      </div>
-      <ProgressBar value={pct} className="mt-3" height={6} />
-      <p className="mt-2 text-xs text-muted">
-        {used} / {allowance} used this month
-      </p>
-      <Link href="/credits">
-        <Button size="sm" variant="secondary" fullWidth className="mt-3">
-          Buy credits
-        </Button>
-      </Link>
-    </div>
-  );
-}
-
-function UserChip() {
-  const { profile, logout } = useApp();
-  const router = useRouter();
-  if (!profile) return null;
-  const initials = profile.full_name
-    ?.split(" ")
-    .map((p) => p[0])
-    .slice(0, 2)
-    .join("")
-    .toUpperCase();
-  return (
-    <div className="flex items-center gap-3 border-t border-edge pt-4">
-      <span className="flex h-9 w-9 items-center justify-center rounded-full gradient-bg text-sm font-semibold text-white">
-        {initials || "U"}
-      </span>
-      <div className="min-w-0 flex-1">
-        <p className="truncate text-sm font-medium text-ink">{profile.full_name || "Creator"}</p>
-        <p className="truncate text-xs text-muted">{profile.email}</p>
-      </div>
-      <button
-        onClick={() => {
-          logout();
-          router.push("/");
-        }}
-        className="rounded-lg p-2 text-muted transition-colors hover:bg-panel-2 hover:text-pink"
-        aria-label="Log out"
-      >
-        <Icon name="logout" size={18} />
-      </button>
-    </div>
-  );
-}
+const iconMap: Record<string, React.ComponentType<{ className?: string }>> = {
+  LayoutGrid, Folder, BarChart3, Settings, CreditCard, Wand2,
+};
 
 export function Sidebar() {
-  const [open, setOpen] = useState(false);
+  const pathname = usePathname();
+  const router = useRouter();
+  const { profile, signOut } = useApp();
+
+  const handleLogout = async () => {
+    await signOut();
+    router.push('/login');
+  };
 
   return (
-    <>
-      {/* Mobile top bar */}
-      <div className="sticky top-0 z-40 flex h-14 items-center justify-between border-b border-edge bg-canvas/90 px-4 backdrop-blur-xl lg:hidden">
-        <img src="/logo-light.png" alt="VersaVid" style={{ height: 40 }} className="w-auto" />
-        <button onClick={() => setOpen(true)} className="rounded-lg p-2 text-ink" aria-label="Open menu">
-          <Icon name="menu" size={22} />
-        </button>
+    <motion.aside
+      initial={{ x: -40, opacity: 0 }}
+      animate={{ x: 0, opacity: 1 }}
+      transition={{ duration: 0.6, ease: [0.16, 1, 0.3, 1] }}
+      className="hidden lg:flex flex-col w-64 shrink-0 h-screen sticky top-0 border-r border-white/5 bg-[#030303] z-30"
+    >
+      <div className="h-16 flex items-center px-5 border-b border-white/5">
+        <Link href="/" className="flex items-center gap-2.5 group">
+          <svg viewBox="0 0 32 32" className="h-6 w-6">
+            <rect width="32" height="32" rx="7" fill="#000" stroke="rgba(255,255,255,0.2)" />
+            <path d="M12 9 L22 16 L12 23 Z" fill="#fff" />
+          </svg>
+          <span className="text-[15px] font-semibold tracking-tight">Versavid</span>
+          <span className="text-[10px] text-[#767D88] font-mono ml-1">studio</span>
+        </Link>
       </div>
-
-      {/* Mobile drawer */}
-      {open && (
-        <div className="fixed inset-0 z-50 lg:hidden">
-          <div className="absolute inset-0 bg-black/60 backdrop-blur-sm" onClick={() => setOpen(false)} />
-          <aside className="absolute left-0 top-0 flex h-full w-72 flex-col gap-4 border-r border-edge bg-canvas p-4">
-            <div className="flex items-center justify-between">
-              <img src="/logo-light.png" alt="VersaVid" style={{ height: 40 }} className="w-auto" />
-              <button onClick={() => setOpen(false)} className="rounded-lg p-2 text-muted" aria-label="Close">
-                <Icon name="x" size={20} />
-              </button>
-            </div>
-            <NavLinks onNavigate={() => setOpen(false)} />
-            <CreditWidget />
-            <UserChip />
-          </aside>
+      <nav className="flex-1 px-3 py-6">
+        <p className="px-3 mb-2 text-[10px] uppercase tracking-[0.2em] text-white/30">Workspace</p>
+        <ul className="space-y-1">
+          {sidebarLinks.map((l) => {
+            const Icon = iconMap[l.icon];
+            const isActive = pathname === l.href;
+            return (
+              <li key={l.label}>
+                <Link
+                  href={l.href}
+                  className={`group flex items-center gap-3 px-3 py-2.5 rounded-lg text-[13px] transition-all duration-300 ${
+                    isActive ? 'bg-white/10 text-white' : 'text-[#767D88] hover:text-white hover:bg-white/5'
+                  }`}
+                >
+                  <Icon className="h-[18px] w-[18px]" />
+                  {l.label}
+                  {isActive && (
+                    <motion.span layoutId="sidebar-active" className="ml-auto h-1.5 w-1.5 rounded-full bg-cyan-400" />
+                  )}
+                </Link>
+              </li>
+            );
+          })}
+        </ul>
+      </nav>
+      <div className="m-3 space-y-3">
+        <div className="flex items-center gap-3 p-3 rounded-xl glass">
+          <div className="h-9 w-9 rounded-full bg-gradient-to-br from-cyan-400 to-fuchsia-500 flex items-center justify-center text-[12px] font-bold text-black shrink-0">
+            {(profile?.full_name || 'U').charAt(0).toUpperCase()}
+          </div>
+          <div className="flex-1 min-w-0">
+            <p className="text-[12px] font-medium text-white truncate">{profile?.full_name || 'User'}</p>
+            <p className="text-[10px] text-[#767D88] truncate">{profile?.email}</p>
+          </div>
+          <button onClick={handleLogout} className="text-[10px] text-[#767D88] hover:text-white transition-colors shrink-0">
+            Sign out
+          </button>
         </div>
-      )}
-
-      {/* Desktop sidebar */}
-      <aside className="sticky top-0 hidden h-screen w-[260px] shrink-0 flex-col gap-5 border-r border-edge bg-canvas p-5 lg:flex">
-        <div className="flex items-center px-2 py-3">
-          <img src="/logo-light.png" alt="VersaVid" style={{ height: 80 }} className="w-auto" />
-        </div>
-        <NavLinks />
-        <CreditWidget />
-        <UserChip />
-      </aside>
-    </>
+        <Link href="/" className="flex items-center gap-1.5 text-[11px] text-[#767D88] hover:text-white transition-colors px-3">
+          <ArrowLeft className="h-3.5 w-3.5" /> Back to site
+        </Link>
+      </div>
+    </motion.aside>
   );
 }
+

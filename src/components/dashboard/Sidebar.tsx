@@ -21,10 +21,10 @@ const iconMap: Record<string, React.ComponentType<{ className?: string }>> = {
 export function Sidebar() {
   const pathname = usePathname();
   const router = useRouter();
-  const { profile, signOut } = useApp();
+  const { profile, logout } = useApp();
 
   const handleLogout = async () => {
-    await signOut();
+    await logout();
     router.push('/login');
   };
 
@@ -90,4 +90,5 @@ export function Sidebar() {
     </motion.aside>
   );
 }
+
 

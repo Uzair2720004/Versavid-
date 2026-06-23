@@ -2,6 +2,7 @@
 import { motion } from 'framer-motion';
 import { usePathname, useRouter } from 'next/navigation';
 import Link from 'next/link';
+import Image from 'next/image';
 import { LayoutGrid, Folder, BarChart3, Settings, ArrowLeft, CreditCard, Wand2 } from 'lucide-react';
 import { useApp } from '@/lib/store';
 
@@ -36,13 +37,8 @@ export function Sidebar() {
       className="hidden lg:flex flex-col w-64 shrink-0 h-screen sticky top-0 border-r border-white/5 bg-[#030303] z-30"
     >
       <div className="h-16 flex items-center px-5 border-b border-white/5">
-        <Link href="/" className="flex items-center gap-2.5 group">
-          <svg viewBox="0 0 32 32" className="h-6 w-6">
-            <rect width="32" height="32" rx="7" fill="#000" stroke="rgba(255,255,255,0.2)" />
-            <path d="M12 9 L22 16 L12 23 Z" fill="#fff" />
-          </svg>
-          <span className="text-[15px] font-semibold tracking-tight">Versavid</span>
-          <span className="text-[10px] text-[#767D88] font-mono ml-1">studio</span>
+        <Link href="/" className="flex items-center">
+          <Image src="/images/logo-dark.jpeg" alt="VersaVid" width={140} height={36} className="object-contain" />
         </Link>
       </div>
       <nav className="flex-1 px-3 py-6">
@@ -90,5 +86,3 @@ export function Sidebar() {
     </motion.aside>
   );
 }
-
-

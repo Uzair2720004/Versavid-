@@ -29,7 +29,7 @@ export default function CreditPacks() {
               <div className="text-[28px] font-bold tracking-tightest text-white leading-none">{pack.credits.toLocaleString()}</div>
               <p className="text-[11px] text-[#767D88] mt-1">credits</p>
               <div className="mt-4 text-[20px] font-bold text-white">${pack.price}</div>
-              <p className="text-[10px] text-[#767D88] mt-0.5">${(pack.price / pack.credits * 100).toFixed(1)}¢ per credit</p>
+              <p className="text-[10px] text-[#767D88] mt-0.5">${(pack.price / pack.credits).toFixed(2)} per credit</p>
               <a href={pack.checkoutUrl} target="_blank" rel="noreferrer"
                 className="mt-4 inline-flex items-center gap-1 text-[11px] text-white/60 group-hover:text-white transition-colors">
                 <Plus className="h-3 w-3" /> Buy pack
@@ -41,3 +41,4 @@ export default function CreditPacks() {
     </section>
   );
 }
+

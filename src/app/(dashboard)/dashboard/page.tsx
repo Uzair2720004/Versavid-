@@ -11,7 +11,7 @@ import { useApp } from '@/lib/store';
 
 const emptyStats = [
   { label: 'Videos created', hint: 'Your created videos will be counted here.', accent: 'rgba(34,211,238,0.12)' },
-  { label: 'Credits remaining', hint: '15 free credits to get you started.', accent: 'rgba(168,85,247,0.12)' },
+  { label: 'Credits remaining', hint: '5 free credits to get you started.', accent: 'rgba(168,85,247,0.12)' },
   { label: 'Videos this month', hint: 'New videos you create this month.', accent: 'rgba(236,72,153,0.12)' },
   { label: 'Credits used', hint: 'Credits consumed by your generations.', accent: 'rgba(59,130,246,0.12)' },
 ];
@@ -102,3 +102,4 @@ export default function DashboardPage() {
     </div>
   );
 }
+

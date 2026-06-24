@@ -146,7 +146,7 @@ function seedTransactions(userId: string): Transaction[] {
       type: "bonus",
       status: "completed",
       payment_id: null,
-      description: "Welcome bonus â€” 15 free credits",
+      description: "Welcome bonus â€” 5 free credits",
       created_at: new Date(now - 72 * 3600_000).toISOString(),
     },
     {
@@ -585,4 +585,5 @@ export function useApp(): AppContextValue {
   if (!ctx) throw new Error("useApp must be used within <AppProvider>");
   return ctx;
 }
+
 

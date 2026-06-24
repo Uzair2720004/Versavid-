@@ -12,7 +12,7 @@ const plans = [
     credits: 15,
     highlight: false,
     badge: null,
-    features: ['15 AI credits (one-time)', 'AI script generation', 'AI images & video clips', 'AI voiceover', 'Auto captions', 'YouTube Shorts & Standard support'],
+    features: ['5 AI credits (one-time)', 'AI script generation', 'AI images & video clips', 'AI voiceover', 'Auto captions', 'YouTube Shorts & Standard support'],
     cta: 'Get started',
     accent: 'from-slate-400/20 to-slate-600/5',
     checkoutUrl: '/signup',
@@ -105,3 +105,4 @@ export default function PlanCards() {
     </section>
   );
 }
+

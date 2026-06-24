@@ -1,13 +1,64 @@
 ﻿'use client';
 import { motion } from 'framer-motion';
 import { Check, Sparkles, ArrowRight } from 'lucide-react';
-import Link from 'next/link';
 
 const plans = [
-  { id: 'free', name: 'Free', tagline: 'Try Versavid and create your first videos', price: 0, period: 'forever', credits: 15, highlight: false, features: ['15 AI credits (one-time)', 'AI script generation', 'AI images & video clips', 'AI voiceover', 'Auto captions', 'YouTube Shorts & Standard support'], cta: 'Get started', accent: 'from-slate-400/20 to-slate-600/5' },
-  { id: 'creator', name: 'Creator', tagline: 'For creators posting regularly', price: 19, period: 'month', credits: 40, highlight: true, badge: 'Most popular', features: ['40 AI credits / month', 'AI script generation', 'AI images & video clips', 'AI voiceover', 'Auto captions', 'YouTube Shorts & Standard support', 'Priority generation queue'], cta: 'Get started', accent: 'from-cyan-400/30 to-blue-600/10' },
-  { id: 'pro', name: 'Pro', tagline: 'For power users and small teams', price: 39, period: 'month', credits: 90, highlight: false, features: ['90 AI credits / month', 'Everything in Creator', 'Faster generation speed', 'Custom caption styles', 'Priority support'], cta: 'Get started', accent: 'from-fuchsia-400/30 to-purple-600/10' },
-  { id: 'agency', name: 'Agency', tagline: 'For agencies managing multiple channels', price: 99, period: 'month', credits: 240, highlight: false, features: ['240 AI credits / month', 'Everything in Pro', 'Highest generation speed', 'Dedicated support'], cta: 'Get started', accent: 'from-amber-400/30 to-orange-600/10' },
+  {
+    id: 'free',
+    name: 'Free',
+    tagline: 'Try Versavid and create your first videos',
+    price: 0,
+    period: 'forever',
+    credits: 15,
+    highlight: false,
+    badge: null,
+    features: ['15 AI credits (one-time)', 'AI script generation', 'AI images & video clips', 'AI voiceover', 'Auto captions', 'YouTube Shorts & Standard support'],
+    cta: 'Get started',
+    accent: 'from-slate-400/20 to-slate-600/5',
+    checkoutUrl: '/signup',
+  },
+  {
+    id: 'creator',
+    name: 'Creator',
+    tagline: 'For creators posting regularly',
+    price: 19,
+    period: 'month',
+    credits: 40,
+    highlight: true,
+    badge: 'Most popular',
+    features: ['40 AI credits / month', 'AI script generation', 'AI images & video clips', 'AI voiceover', 'Auto captions', 'YouTube Shorts & Standard support', 'Priority generation queue'],
+    cta: 'Get started',
+    accent: 'from-cyan-400/30 to-blue-600/10',
+    checkoutUrl: 'https://versavid.lemonsqueezy.com/checkout/buy/5260c4ee-168c-4130-a471-e32b3fb7a4b4',
+  },
+  {
+    id: 'pro',
+    name: 'Pro',
+    tagline: 'For power users and small teams',
+    price: 39,
+    period: 'month',
+    credits: 90,
+    highlight: false,
+    badge: null,
+    features: ['90 AI credits / month', 'Everything in Creator', 'Faster generation speed', 'Custom caption styles', 'Priority support'],
+    cta: 'Get started',
+    accent: 'from-fuchsia-400/30 to-purple-600/10',
+    checkoutUrl: 'https://versavid.lemonsqueezy.com/checkout/buy/688d5fdd-bc76-41d7-b859-9469cf93412d',
+  },
+  {
+    id: 'agency',
+    name: 'Agency',
+    tagline: 'For agencies managing multiple channels',
+    price: 99,
+    period: 'month',
+    credits: 240,
+    highlight: false,
+    badge: null,
+    features: ['240 AI credits / month', 'Everything in Pro', 'Highest generation speed', 'Dedicated support'],
+    cta: 'Get started',
+    accent: 'from-amber-400/30 to-orange-600/10',
+    checkoutUrl: 'https://versavid.lemonsqueezy.com/checkout/buy/5d8895b2-1601-43d7-923d-8ac35c30c4fe',
+  },
 ];
 
 export default function PlanCards() {
@@ -42,9 +93,10 @@ export default function PlanCards() {
                     </li>
                   ))}
                 </ul>
-                <Link href="/signup" className={'mt-6 w-full h-10 rounded-lg font-medium text-[13px] flex items-center justify-center gap-2 transition-all duration-300 ' + (plan.highlight ? 'bg-white text-black hover:scale-[1.03]' : 'glass text-white hover:bg-white/10')}>
+                <a href={plan.checkoutUrl} target={plan.checkoutUrl === '/signup' ? '_self' : '_blank'} rel="noreferrer"
+                  className={'mt-6 w-full h-10 rounded-lg font-medium text-[13px] flex items-center justify-center gap-2 transition-all duration-300 ' + (plan.highlight ? 'bg-white text-black hover:scale-[1.03]' : 'glass text-white hover:bg-white/10')}>
                   {plan.cta} <ArrowRight className="h-4 w-4" />
-                </Link>
+                </a>
               </div>
             </motion.div>
           ))}

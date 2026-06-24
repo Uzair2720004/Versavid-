@@ -1,4 +1,5 @@
 ﻿'use client';
+import { useRef } from 'react';
 import { motion } from 'framer-motion';
 import { Sparkles, Upload, Smartphone, Monitor, FileText } from 'lucide-react';
 
@@ -16,6 +17,22 @@ const iconMap: Record<string, any> = { Smartphone, Monitor };
 
 export default function Step1Script({ selections, update }: { selections: Record<string, any>; update: (k: string, v: any) => void }) {
   const scriptMode = selections.scriptMode || 'ai';
+  const fileInputRef = useRef<HTMLInputElement>(null);
+
+  const handleFileUpload = async (file: File) => {
+    if (!file) return;
+    const ext = file.name.split('.').pop()?.toLowerCase();
+    if (ext === 'txt') {
+      const text = await file.text();
+      update('topic', text);
+    } else if (ext === 'docx') {
+      // For docx, just store filename and notify user
+      update('topic', `[Uploaded: ${file.name}] — paste your script text here or use a .txt file for auto-read`);
+    } else {
+      alert('Please upload a .txt or .docx file');
+    }
+  };
+
   return (
     <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -20 }} transition={{ duration: 0.5, ease: [0.16, 1, 0.3, 1] }} className="space-y-8">
       <div>
@@ -35,6 +52,7 @@ export default function Step1Script({ selections, update }: { selections: Record
           ))}
         </div>
       </div>
+
       <div>
         <label className="text-[13px] font-medium text-white mb-3 block">{scriptMode === 'ai' ? 'Topic' : 'Paste or upload your script'}</label>
         {scriptMode === 'ai' ? (
@@ -42,16 +60,40 @@ export default function Step1Script({ selections, update }: { selections: Record
             placeholder="e.g. 5 mysterious facts about deep ocean creatures"
             className="w-full h-12 px-4 rounded-xl bg-white/5 border border-white/10 text-[14px] text-white placeholder:text-[#767D88] focus:outline-none focus:border-fuchsia-400/50 transition-colors" />
         ) : (
-          <div className="relative rounded-xl border border-dashed border-white/15 bg-white/[0.02] hover:border-fuchsia-400/30 transition-colors cursor-pointer p-8"
-            onClick={() => update('topic', 'Uploaded script: my_video_script.txt')}>
-            <div className="flex flex-col items-center text-center">
-              <div className="h-12 w-12 rounded-xl bg-white/5 flex items-center justify-center mb-3"><FileText className="h-5 w-5 text-[#767D88]" /></div>
-              <p className="text-[13px] text-white font-medium">Drop your script here</p>
-              <p className="text-[11px] text-[#767D88] mt-1">or click to browse — .txt, .docx up to 5MB</p>
+          <div className="space-y-3">
+            <textarea
+              value={selections.topic || ''}
+              onChange={(e) => update('topic', e.target.value)}
+              placeholder="Paste your script here..."
+              rows={6}
+              className="w-full px-4 py-3 rounded-xl bg-white/5 border border-white/10 text-[14px] text-white placeholder:text-[#767D88] focus:outline-none focus:border-fuchsia-400/50 transition-colors resize-none"
+            />
+            <div
+              className="relative rounded-xl border border-dashed border-white/15 bg-white/[0.02] hover:border-fuchsia-400/30 transition-colors cursor-pointer p-8"
+              onClick={() => fileInputRef.current?.click()}
+            >
+              <div className="flex flex-col items-center text-center">
+                <div className="h-12 w-12 rounded-xl bg-white/5 flex items-center justify-center mb-3">
+                  <FileText className="h-5 w-5 text-[#767D88]" />
+                </div>
+                <p className="text-[13px] text-white font-medium">Drop your script here</p>
+                <p className="text-[11px] text-[#767D88] mt-1">or click to browse — .txt, .docx up to 5MB</p>
+              </div>
+              <input
+                ref={fileInputRef}
+                type="file"
+                accept=".txt,.docx"
+                className="hidden"
+                onChange={(e) => {
+                  const file = e.target.files?.[0];
+                  if (file) handleFileUpload(file);
+                }}
+              />
             </div>
           </div>
         )}
       </div>
+
       <div>
         <label className="text-[13px] font-medium text-white mb-3 block">Format</label>
         <div className="grid grid-cols-2 gap-3 max-w-md">
@@ -74,6 +116,7 @@ export default function Step1Script({ selections, update }: { selections: Record
           })}
         </div>
       </div>
+
       <div>
         <label className="text-[13px] font-medium text-white mb-3 block">Length</label>
         <div className="flex flex-wrap gap-2">
@@ -88,6 +131,7 @@ export default function Step1Script({ selections, update }: { selections: Record
           })}
         </div>
       </div>
+
       <div>
         <label className="text-[13px] font-medium text-white mb-3 block">Tone</label>
         <div className="flex flex-wrap gap-2">

@@ -4,12 +4,7 @@ import { Check, Sparkles, ArrowRight } from 'lucide-react';
 
 const plans = [
   {
-    id: 'free',
-    name: 'Free',
-    tagline: 'Try Versavid and create your first videos',
-    price: 0,
-    period: 'forever',
-    credits: 15,
+    id: 'free', credits: 5,
     highlight: false,
     badge: null,
     features: ['5 AI credits (one-time)', 'AI script generation', 'AI images & video clips', 'AI voiceover', 'Auto captions', 'YouTube Shorts & Standard support'],
@@ -105,4 +100,6 @@ export default function PlanCards() {
     </section>
   );
 }
+
+
 

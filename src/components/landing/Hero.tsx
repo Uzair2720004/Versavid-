@@ -110,17 +110,17 @@ export default function Hero() {
       <motion.div style={{ opacity: contentOpacity, y: contentY }} className="relative z-10 max-w-[1400px] mx-auto px-6 lg:px-10 pt-28 pb-24 min-h-screen flex flex-col items-center justify-center text-center">
         <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.7, ease: [0.16, 1, 0.3, 1] }} className="glass rounded-full px-4 py-1.5 mb-8 flex items-center gap-2 text-[12px] text-white/70">
           <span className="h-1.5 w-1.5 rounded-full bg-cyan-400 animate-pulse" />
-          Turn any topic into a YouTube video in minutes
+          Type a topic. Get a ready-to-upload video.
         </motion.div>
         <motion.h1 initial={{ opacity: 0, y: 30 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.9, ease: [0.16, 1, 0.3, 1], delay: 0.1 }} className="text-[44px] sm:text-[64px] lg:text-[88px] font-bold leading-[1.0] tracking-tightest text-gradient text-glow max-w-5xl">
-          Create Without<br />Limits
+          Your AI Video<br />Team
         </motion.h1>
         <motion.p initial={{ opacity: 0, y: 24 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.9, ease: [0.16, 1, 0.3, 1], delay: 0.25 }} className="mt-7 max-w-xl text-[16px] sm:text-[18px] leading-[1.4] text-[#a8aeb8]">
-          The AI-powered YouTube automation tool that writes scripts, generates visuals, adds voiceover and captions — all from a single topic.
+          Script. Visuals. Voice. Captions. Done in minutes — fully automated, ready to upload.
         </motion.p>
         <motion.div initial={{ opacity: 0, y: 24 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.9, ease: [0.16, 1, 0.3, 1], delay: 0.4 }} className="mt-9 flex flex-col sm:flex-row items-center gap-3">
           <Link href="/signup" className="group inline-flex items-center gap-2 rounded-full bg-white px-6 py-3 text-[14px] font-semibold text-black hover:scale-[1.03] transition-transform duration-300">
-            Start creating <ArrowRight className="h-4 w-4 group-hover:translate-x-0.5 transition-transform" />
+            Start for free <ArrowRight className="h-4 w-4 group-hover:translate-x-0.5 transition-transform" />
           </Link>
         </motion.div>
         <div className="mt-16 w-full"><HolographicUI /></div>
@@ -132,3 +132,4 @@ export default function Hero() {
     </section>
   );
 }
+

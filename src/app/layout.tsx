@@ -1,7 +1,13 @@
 import type { Metadata } from "next";
+
+import Script from 'next/script';
 import { Geist, Geist_Mono } from "next/font/google";
+
+import Script from 'next/script';
 import "./globals.css";
 import { AppProvider } from "@/lib/store";
+
+import Script from 'next/script';
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -33,6 +39,15 @@ export default function RootLayout({
     >
       <body className="min-h-full bg-canvas text-ink">
         <AppProvider>{children}</AppProvider>
+      
+        {/* Chatzy VidStrategist Widget */}
+        <link rel="stylesheet" href="https://chatzy-kb-store.s3.amazonaws.com/icons/5ab07987-b5db-477c-82ff-1287e0883acb" />
+        <Script
+          src="https://chatzy-kb-store.s3.amazonaws.com/icons/56706cc4-b3ba-4eba-9610-f2fb07008a5c"
+          id="c9fd61cc-273a-4188-aceb-8538c8b507ef"
+          className="chatzy_widget_script"
+          strategy="afterInteractive"
+        />
       </body>
     </html>
   );

@@ -1,3 +1,4 @@
+$code = @'
 import { hasRealKey } from "@/lib/utils";
 import { mockRender } from "@/lib/ai/mock";
 import { uid } from "@/lib/utils";
@@ -17,14 +18,12 @@ export async function POST(request: Request) {
     images = [],
     music = "uplifting",
     script = "",
-    voice = "21m00Tcm4TlvDq8ikWAM",
   } = body as {
     format?: string;
     clips?: unknown[];
     images?: string[];
     music?: string;
     script?: string;
-    voice?: string;
   };
   const seed = uid("render");
   void music; // temporarily unused — see TODO below
@@ -82,7 +81,7 @@ export async function POST(request: Request) {
                   type: "voice",
                   text: cleanText,
                   model: "elevenlabs",
-                  voice: voice,
+                  voice: "Rachel",
                   connection: "elevenlabs-main",
                 },
                 {
@@ -149,3 +148,7 @@ export async function POST(request: Request) {
   await new Promise((r) => setTimeout(r, 1100));
   return Response.json({ ...mockRender(seed, format), source: "mock" });
 }
+'@
+
+Set-Content "src\app\api\generate\render\route.ts" $code -NoNewline
+Write-Host "Done. File rewritten with resize + ElevenLabs + text cleanup."

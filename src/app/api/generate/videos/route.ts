@@ -17,7 +17,7 @@ export async function POST(request: Request) {
   if (hasRealKey(process.env.FAL_KEY) && images.length) {
     try {
       const clips: { url: string; poster: string; duration: number }[] = [];
-      for (const image of images.slice(0, 3)) {
+      for (const image of images.slice(0, 1)) {
         const res = await fetch("https://fal.run/fal-ai/kling-video/v1/standard/image-to-video", {
           method: "POST",
           headers: {

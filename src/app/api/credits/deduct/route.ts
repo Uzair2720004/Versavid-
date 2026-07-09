@@ -1,55 +1,81 @@
-import { createServerSupabase } from "@/lib/supabase/server";
+import { createAdminSupabase } from "@/lib/supabase/server";
 
 export const runtime = "nodejs";
 
 /**
- * POST /api/credits/deduct â€” atomically deducts credits after a generation.
- * Body: { amount: number, description?: string }
- * Falls back to a no-op acknowledgement when Supabase isn't configured (the
- * client store handles deduction locally in that case).
+ * POST /api/credits/deduct — atomically checks balance and deducts credits
+ * server-side using the service-role key. Prevents client-side balance
+ * tampering and race conditions from concurrent deduction calls.
  */
 export async function POST(request: Request) {
   const body = await request.json().catch(() => ({}));
-  const amount = Math.max(0, Number((body as { amount?: number }).amount) || 0);
-  const description = (body as { description?: string }).description ?? "Video generation";
+  const { userId, amount, description } = body as {
+    userId?: string;
+    amount?: number;
+    description?: string;
+  };
 
-  const supabase = await createServerSupabase();
-  if (!supabase) {
-    return Response.json({ configured: false, deducted: amount });
+  if (!userId || typeof amount !== "number" || amount <= 0) {
+    return Response.json({ error: "Invalid request" }, { status: 400 });
   }
 
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
-  if (!user) return Response.json({ error: "unauthorized" }, { status: 401 });
+  const supabase = await createAdminSupabase();
+  if (!supabase) {
+    // No Supabase configured (local demo mode) — nothing to do server-side.
+    return Response.json({ ok: true, mode: "local" });
+  }
 
-  const { data: credits, error } = await supabase
+  const { data: current, error: readError } = await supabase
     .from("credits")
     .select("balance, total_used")
-    .eq("user_id", user.id)
-    .single();
+    .eq("user_id", userId)
+    .maybeSingle();
 
-  if (error || !credits) return Response.json({ error: "no credit record" }, { status: 500 });
-  if (credits.balance < amount) {
-    return Response.json({ error: "insufficient credits", balance: credits.balance }, { status: 402 });
+  if (readError || !current) {
+    return Response.json({ error: "Could not read balance" }, { status: 500 });
   }
 
-  const newBalance = credits.balance - amount;
-  const { error: updateError } = await supabase
+  if (current.balance < amount) {
+    return Response.json({ error: "Insufficient credits" }, { status: 402 });
+  }
+
+  const newBalance = current.balance - amount;
+  const newTotalUsed = current.total_used + amount;
+
+  // Optimistic lock: only succeed if balance still matches what we just read,
+  // so a concurrent deduction can't be silently overwritten.
+  const { data: updated, error: updateError } = await supabase
     .from("credits")
-    .update({ balance: newBalance, total_used: credits.total_used + amount, updated_at: new Date().toISOString() })
-    .eq("user_id", user.id);
+    .update({
+      balance: newBalance,
+      total_used: newTotalUsed,
+      updated_at: new Date().toISOString(),
+    })
+    .eq("user_id", userId)
+    .eq("balance", current.balance)
+    .select()
+    .maybeSingle();
 
-  if (updateError) return Response.json({ error: updateError.message }, { status: 500 });
+  if (updateError || !updated) {
+    return Response.json({ error: "Balance changed concurrently, please retry" }, { status: 409 });
+  }
 
-  await supabase.from("transactions").insert({
-    user_id: user.id,
+  const { error: txnError } = await supabase.from("transactions").insert({
+    id: crypto.randomUUID(),
+    user_id: userId,
     amount: 0,
     credits: -amount,
     type: "usage",
     status: "completed",
-    description,
+    payment_id: null,
+    description: description ?? "Video render",
+    created_at: new Date().toISOString(),
   });
 
-  return Response.json({ configured: true, deducted: amount, balance: newBalance });
+  if (txnError) {
+    console.error("credits/deduct: transaction log failed:", txnError.message);
+    // Balance already deducted successfully; don't fail the request over a log entry.
+  }
+
+  return Response.json({ ok: true, balance: newBalance, total_used: newTotalUsed });
 }

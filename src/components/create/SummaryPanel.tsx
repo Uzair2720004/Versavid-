@@ -1,11 +1,11 @@
-﻿'use client';
+'use client';
 import { motion } from 'framer-motion';
 import { Sparkles, Wand2, Film, Image, Mic, Type, Clock, Monitor, Smartphone } from 'lucide-react';
 import { useApp } from '@/lib/store';
 import Link from 'next/link';
 
 function SummaryRow({ icon: Icon, label, value }: { icon: any; label: string; value: string }) {
-  if (!value || value === '—') return null;
+  if (!value || value === '-') return null;
   return (
     <motion.div initial={{ opacity: 0, x: 16 }} animate={{ opacity: 1, x: 0 }} transition={{ duration: 0.4, ease: [0.16, 1, 0.3, 1] }}
       className="flex items-center gap-3 py-2.5 border-b border-white/5 last:border-0">
@@ -37,17 +37,17 @@ export default function SummaryPanel({ selections, credits, onGenerate, canGener
           <p className="text-[11px] text-[#767D88]">Your video configuration</p>
         </div>
         <div className="p-5 space-y-0">
-          <SummaryRow icon={Film} label="Topic" value={selections.topic || '—'} />
-          <SummaryRow icon={formatIcon} label="Format" value={selections.format ? (selections.format === 'vertical' ? 'Vertical 9:16' : 'Horizontal 16:9') : '—'} />
-          <SummaryRow icon={Clock} label="Length" value={selections.length || '—'} />
-          <SummaryRow icon={Type} label="Tone" value={selections.tone || '—'} />
-          <SummaryRow icon={Image} label="Media type" value={selections.mediaType || '—'} />
-          <SummaryRow icon={Image} label="Photo style" value={selections.photoStyle || '—'} />
-          <SummaryRow icon={Film} label="Video style" value={selections.videoStyle || '—'} />
-          <SummaryRow icon={Mic} label="Voice" value={selections.voice || '—'} />
-          <SummaryRow icon={Type} label="Language" value={selections.language || '—'} />
-          <SummaryRow icon={Clock} label="Speed" value={selections.speed || '—'} />
-          <SummaryRow icon={Type} label="Captions" value={selections.captionStyle || '—'} />
+          <SummaryRow icon={Film} label="Topic" value={selections.topic || '-'} />
+          <SummaryRow icon={formatIcon} label="Format" value={selections.format ? (selections.format === 'vertical' ? 'Vertical 9:16' : 'Horizontal 16:9') : '-'} />
+          <SummaryRow icon={Clock} label="Length" value={selections.length || '-'} />
+          <SummaryRow icon={Type} label="Tone" value={selections.tone || '-'} />
+          <SummaryRow icon={Image} label="Media type" value={selections.mediaType || '-'} />
+          <SummaryRow icon={Image} label="Photo style" value={selections.photoStyle || '-'} />
+          <SummaryRow icon={Film} label="Video style" value={selections.videoStyle || '-'} />
+          <SummaryRow icon={Mic} label="Voice" value={selections.voice || '-'} />
+          <SummaryRow icon={Type} label="Language" value={selections.language || '-'} />
+          <SummaryRow icon={Clock} label="Speed" value={selections.speed || '-'} />
+          <SummaryRow icon={Type} label="Captions" value={selections.captionStyle || '-'} />
         </div>
         <div className="p-5 border-t border-white/10 bg-gradient-to-b from-transparent to-fuchsia-500/5">
           <div className="flex items-center justify-between mb-4">
@@ -67,7 +67,7 @@ export default function SummaryPanel({ selections, credits, onGenerate, canGener
           <p className="text-[11px] text-[#767D88]">Your balance</p>
           <p className="text-[16px] font-bold text-white">{balance} credits</p>
         </div>
-        <Link href="/pricing" className="text-[11px] text-fuchsia-400 hover:text-fuchsia-300 transition-colors">Top up →</Link>
+        <Link href="/credits" className="text-[11px] text-fuchsia-400 hover:text-fuchsia-300 transition-colors">Top up -&gt;</Link>
       </div>
     </motion.aside>
   );

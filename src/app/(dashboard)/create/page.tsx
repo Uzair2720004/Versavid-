@@ -1,4 +1,4 @@
-﻿'use client';
+'use client';
 import { useState, useMemo } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { ArrowLeft, ArrowRight, Sparkles, Loader2, Check } from 'lucide-react';
@@ -11,6 +11,8 @@ import Step3Voice from '@/components/create/Step3Voice';
 import Step4Review from '@/components/create/Step4Review';
 import SummaryPanel from '@/components/create/SummaryPanel';
 import { useRouter } from 'next/navigation';
+import { useApp } from '@/lib/store';
+import { uid, creditsForSettings } from '@/lib/utils';
 
 export default function CreateVideoPage() {
   const [step, setStep] = useState(1);
@@ -18,16 +20,11 @@ export default function CreateVideoPage() {
   const [done, setDone] = useState(false);
   const [selections, setSelections] = useState<Record<string, any>>({ scriptMode: 'ai', lengthCredits: 0 });
   const router = useRouter();
+  const { addVideo } = useApp();
 
   const update = (key: string, value: any) => setSelections((prev) => ({ ...prev, [key]: value }));
 
-  const credits = useMemo(() => {
-    const base = selections.lengthCredits || 0;
-    const voice = selections.voice ? 2 : 0;
-    const media = selections.mediaType ? 3 : 0;
-    const captions = selections.captionStyle ? 1 : 0;
-    return base + voice + media + captions;
-  }, [selections]);
+  const credits = useMemo(() => creditsForSettings(selections as any), [selections]);
 
   const stepValid = useMemo(() => {
     if (step === 1) return selections.topic && selections.format && selections.length && selections.tone;
@@ -50,7 +47,27 @@ export default function CreateVideoPage() {
   const handleGenerate = () => {
     if (!canGenerate) return;
     setGenerating(true);
-    setTimeout(() => { setGenerating(false); setDone(true); }, 3000);
+
+    const id = crypto.randomUUID();
+    addVideo({
+      id,
+      user_id: '',
+      title: selections.topic || 'Untitled video',
+      topic: selections.topic,
+      format: selections.format,
+      status: 'queued',
+      script: null,
+      video_url: null,
+      thumbnail_url: null,
+      credits_used: credits,
+      duration: 0,
+      settings: selections as any,
+      created_at: new Date().toISOString(),
+    });
+
+    router.push(`/generate/${id}`);
+
+    router.push(`/generate/${id}`);
   };
 
   const handleReset = () => { setDone(false); setStep(1); setSelections({ scriptMode: 'ai', lengthCredits: 0 }); };
@@ -137,3 +154,7 @@ export default function CreateVideoPage() {
     </div>
   );
 }
+
+
+
+

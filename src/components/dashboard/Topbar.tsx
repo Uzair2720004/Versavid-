@@ -1,4 +1,4 @@
-﻿'use client';
+'use client';
 import { motion } from 'framer-motion';
 import { Bell } from 'lucide-react';
 import { usePathname } from 'next/navigation';
@@ -9,7 +9,7 @@ const pageNames: Record<string, string> = {
   '/videos': 'My Videos',
   '/analytics': 'Analytics',
   '/settings': 'Settings',
-  '/pricing': 'Credits',
+  '/credits': 'Credits',
   '/create': 'Create Video',
 };
 
@@ -43,3 +43,4 @@ export function Topbar() {
     </motion.header>
   );
 }
+

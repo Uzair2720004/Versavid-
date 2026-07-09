@@ -1,4 +1,4 @@
-﻿"use client";
+"use client";
 
 import {
   createContext,
@@ -103,7 +103,7 @@ function seedVideos(userId: string): VideoRecord[] {
     topic,
     format,
     status,
-    script: `Scene 1: ${topic}â€¦`,
+    script: `Scene 1: ${topic}…`,
     video_url: status === "ready" ? "/demo/sample.mp4" : null,
     thumbnail_url: placeholderImage(i + 11, format === "9:16" ? 450 : 800, format === "9:16" ? 800 : 450),
     credits_used: credits,
@@ -146,7 +146,7 @@ function seedTransactions(userId: string): Transaction[] {
       type: "bonus",
       status: "completed",
       payment_id: null,
-      description: "Welcome bonus â€” 5 free credits",
+      description: "Welcome bonus — 5 free credits",
       created_at: new Date(now - 72 * 3600_000).toISOString(),
     },
     {
@@ -157,7 +157,7 @@ function seedTransactions(userId: string): Transaction[] {
       type: "purchase",
       status: "completed",
       payment_id: "demo_pi_1029",
-      description: "Creator pack â€” 100 credits",
+      description: "Creator pack — 100 credits",
       created_at: new Date(now - 50 * 3600_000).toISOString(),
     },
     {
@@ -168,7 +168,7 @@ function seedTransactions(userId: string): Transaction[] {
       type: "usage",
       status: "completed",
       payment_id: null,
-      description: "Video render â€” 5 AI tools that feel illegal to know",
+      description: "Video render — 5 AI tools that feel illegal to know",
       created_at: new Date(now - 4 * 3600_000).toISOString(),
     },
   ];
@@ -481,38 +481,55 @@ export function AppProvider({ children }: { children: ReactNode }) {
   );
 
   const deductCredits = useCallback(
-    (amount: number, description: string) => {
+    async (amount: number, description: string) => {
       const prev = stateRef.current;
       if (!prev.credits || !prev.profile) return;
-      const credits: Credits = {
-        ...prev.credits,
-        balance: Math.max(0, prev.credits.balance - amount),
-        total_used: prev.credits.total_used + amount,
-        updated_at: new Date().toISOString(),
-      };
-      const txn: Transaction = {
-        id: crypto.randomUUID(),
-        user_id: prev.profile.id,
-        amount: 0,
-        credits: -amount,
-        type: "usage",
-        status: "completed",
-        payment_id: null,
-        description,
-        created_at: new Date().toISOString(),
-      };
-      setState((p) => ({ ...p, credits, transactions: [txn, ...p.transactions] }));
-      if (supabase) {
-        supabase
-          .from("credits")
-          .update({ balance: credits.balance, total_used: credits.total_used, updated_at: credits.updated_at })
-          .eq("user_id", prev.profile.id)
-          .then(({ error }) => {
-            if (error) console.error("deductCredits (credits) failed:", error.message);
-          });
-        supabase.from("transactions").insert(txn).then(({ error }) => {
-          if (error) console.error("deductCredits (transaction) failed:", error.message);
+
+      if (!supabase) {
+        // Local demo mode: no server to call, mutate local state directly.
+        const credits: Credits = {
+          ...prev.credits,
+          balance: Math.max(0, prev.credits.balance - amount),
+          total_used: prev.credits.total_used + amount,
+          updated_at: new Date().toISOString(),
+        };
+        const txn: Transaction = {
+          id: crypto.randomUUID(),
+          user_id: prev.profile.id,
+          amount: 0,
+          credits: -amount,
+          type: "usage",
+          status: "completed",
+          payment_id: null,
+          description,
+          created_at: new Date().toISOString(),
+        };
+        setState((p) => ({ ...p, credits, transactions: [txn, ...p.transactions] }));
+        return;
+      }
+
+      try {
+        const res = await fetch("/api/credits/deduct", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ userId: prev.profile.id, amount, description }),
         });
+        const data = await res.json();
+
+        if (!res.ok) {
+          console.error("deductCredits failed:", data.error);
+          return;
+        }
+
+        const credits: Credits = {
+          ...prev.credits,
+          balance: data.balance,
+          total_used: data.total_used,
+          updated_at: new Date().toISOString(),
+        };
+        setState((p) => ({ ...p, credits }));
+      } catch (err) {
+        console.error("deductCredits request failed:", err);
       }
     },
     [supabase]
@@ -585,5 +602,6 @@ export function useApp(): AppContextValue {
   if (!ctx) throw new Error("useApp must be used within <AppProvider>");
   return ctx;
 }
+
 
 

@@ -28,7 +28,7 @@ async function postJSON(url: string, body: unknown) {
 export default function GeneratePage() {
   const params = useParams<{ id: string }>();
   const router = useRouter();
-  const { videos, updateVideo, deductCredits } = useApp();
+  const { videos, updateVideo, deductCredits, credits: creditsState } = useApp();
   const video = videos.find((v) => v.id === params.id);
   const alreadyReady = video?.status === "ready";
 
@@ -61,6 +61,12 @@ export default function GeneratePage() {
 
     async function run() {
       const s = video!.settings;
+      if ((creditsState?.balance ?? 0) < video!.credits_used) {
+        log("Insufficient credits to start this generation.", "warn");
+        updateVideo(video!.id, { status: "failed" });
+        return;
+      }
+
       updateVideo(video!.id, { status: "generating" });
       log("Generation started. You can safely navigate away — we'll keep working.", "info");
 
@@ -151,11 +157,14 @@ export default function GeneratePage() {
 
         // 7. Final render
         mark("render", "running");
-        log("Assembling the final MP4 with Creatomate…");
+        log("Assembling the final MP4 with JSON2Video…");
         const renderRes = await postJSON("/api/generate/render", {
           format: s.format,
           clips: clipRes.clips ?? [],
+          images,
           music: s.music,
+          script,
+          voice: s.voice,
         });
         if (cancelled) return;
         mark("render", "done");
@@ -360,3 +369,9 @@ function StepCard({ step }: { step: GenStep }) {
     </div>
   );
 }
+
+
+
+
+
+

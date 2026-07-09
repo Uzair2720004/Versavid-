@@ -1,3 +1,4 @@
+$code = @'
 import { hasRealKey } from "@/lib/utils";
 import { mockRender } from "@/lib/ai/mock";
 import { uid } from "@/lib/utils";
@@ -5,9 +6,9 @@ import { uid } from "@/lib/utils";
 export const runtime = "nodejs";
 
 /**
- * POST /api/generate/render — assembles clips, images, voiceover (ElevenLabs
- * via JSON2Video connection), captions & music into a final MP4 via
- * JSON2Video. Returns a mock render when JSON2VIDEO_API_KEY is not configured.
+ * POST /api/generate/render — assembles clips, images, voiceover, captions &
+ * music into a final MP4 via JSON2Video. Returns a mock render when
+ * JSON2VIDEO_API_KEY is not configured.
  */
 export async function POST(request: Request) {
   const body = await request.json().catch(() => ({}));
@@ -17,14 +18,12 @@ export async function POST(request: Request) {
     images = [],
     music = "uplifting",
     script = "",
-    voice = "21m00Tcm4TlvDq8ikWAM",
   } = body as {
     format?: string;
     clips?: unknown[];
     images?: string[];
     music?: string;
     script?: string;
-    voice?: string;
   };
   const seed = uid("render");
   void music; // temporarily unused — see TODO below
@@ -41,7 +40,6 @@ export async function POST(request: Request) {
               type: "video",
               src: clip.url,
               duration: clip.duration ?? 5,
-              resize: "cover",
             },
           ],
         })),
@@ -51,18 +49,11 @@ export async function POST(request: Request) {
               type: "image",
               src: img,
               duration: 4,
-              resize: "cover",
               zoom: 2,
             },
           ],
         })),
       ];
-
-      const cleanText = script
-        .replace(/\[[^\]]+\]/g, "")
-        .replace(/[#*_`>]/g, "")
-        .replace(/\n{2,}/g, " ")
-        .trim();
 
       // 1. Submit the render job
       const submitRes = await fetch("https://api.json2video.com/v2/movies", {
@@ -76,14 +67,13 @@ export async function POST(request: Request) {
           width: format === "16:9" ? 1920 : 1080,
           height: format === "16:9" ? 1080 : 1920,
           scenes,
-          elements: cleanText
+          elements: script
             ? [
                 {
                   type: "voice",
-                  text: cleanText,
-                  model: "elevenlabs",
-                  voice: voice,
-                  connection: "elevenlabs-main",
+                  text: script.replace(/\[[^\]]+\]/g, "").trim(),
+                  voice: "en-US-EmmaMultilingualNeural",
+                  model: "azure",
                 },
                 {
                   type: "subtitles",
@@ -149,3 +139,7 @@ export async function POST(request: Request) {
   await new Promise((r) => setTimeout(r, 1100));
   return Response.json({ ...mockRender(seed, format), source: "mock" });
 }
+'@
+
+Set-Content "src\app\api\generate\render\route.ts" $code -NoNewline
+Write-Host "Done. File rewritten."

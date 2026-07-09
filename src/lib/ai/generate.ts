@@ -28,23 +28,33 @@ export async function generateImages(input: GenerateImagesInput): Promise<Genera
   if (hasRealKey(process.env.FAL_KEY)) {
     try {
       const size = format === "16:9" ? "landscape_16_9" : "portrait_16_9";
-      const res = await fetch("https://fal.run/fal-ai/flux/schnell", {
-        method: "POST",
-        headers: {
-          Authorization: `Key ${process.env.FAL_KEY}`,
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-          prompt: `${style} style cinematic shot illustrating: ${topic}`,
-          image_size: size,
-          num_images: Math.min(n, 4),
-        }),
-      });
-      if (res.ok) {
-        const data = await res.json();
-        const images = (data?.images ?? []).map((i: { url: string }) => i.url);
-        if (images.length) return { images, source: "fal" };
+      const batchSize = 4;
+      const allImages: string[] = [];
+
+      for (let i = 0; i < n; i += batchSize) {
+        const remaining = Math.min(batchSize, n - i);
+        const res = await fetch("https://fal.run/fal-ai/flux/schnell", {
+          method: "POST",
+          headers: {
+            Authorization: `Key ${process.env.FAL_KEY}`,
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({
+            prompt: `${style} style cinematic shot illustrating: ${topic}`,
+            image_size: size,
+            num_images: remaining,
+          }),
+        });
+        if (res.ok) {
+          const data = await res.json();
+          const images = (data?.images ?? []).map((i: { url: string }) => i.url);
+          allImages.push(...images);
+        } else {
+          break;
+        }
       }
+
+      if (allImages.length) return { images: allImages, source: "fal" };
     } catch {
       /* fall through to mock */
     }

@@ -147,12 +147,14 @@ export default function GeneratePage() {
         bump();
 
         // 6. Music
+        // TODO: Implement actual music generation/selection and API call here.
+        // For now, this step is simulated.
         mark("music", "running");
-        log(`Mixing "${s.music}" background track…`);
-        await new Promise((r) => setTimeout(r, 800));
+        log(`Mixing "${s.music}" background track (simulated)…`);
+        await new Promise((r) => setTimeout(r, 800)); // Simulate music processing
         if (cancelled) return;
         mark("music", "done");
-        log("Audio levels balanced.", "success");
+        log("Audio levels balanced (simulated).", "success");
         bump();
 
         // 7. Final render

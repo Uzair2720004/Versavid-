@@ -95,6 +95,23 @@ export async function POST(request: Request) {
 
   if (supabase && userId && credits > 0) {
     try {
+      // Check for duplicate transactions to prevent double-crediting
+      const { data: existingTransaction, error: fetchError } = await supabase
+        .from("transactions")
+        .select("id")
+        .eq("payment_id", paymentId)
+        .maybeSingle();
+
+      if (fetchError) {
+        console.error("Error checking for existing transaction:", fetchError);
+        return Response.json({ received: true, processed: false }, { status: 500 });
+      }
+
+      if (existingTransaction) {
+        console.log(`Duplicate webhook for payment_id ${paymentId} received. Skipping credit grant.`);
+        return Response.json({ received: true, processed: true }); // Acknowledge without processing
+      }
+
       const { data: row } = await supabase
         .from("credits")
         .select("balance, total_purchased")
@@ -119,8 +136,9 @@ export async function POST(request: Request) {
         payment_id: paymentId,
         description: `Lemon Squeezy order — ${productName}`,
       });
-    } catch {
-      return Response.json({ received: true, processed: false });
+    } catch (error) {
+      console.error("Error processing webhook:", error);
+      return Response.json({ received: true, processed: false }, { status: 500 });
     }
   }
 

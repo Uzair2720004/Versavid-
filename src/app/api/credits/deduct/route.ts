@@ -3,7 +3,7 @@ import { createAdminSupabase } from "@/lib/supabase/server";
 export const runtime = "nodejs";
 
 /**
- * POST /api/credits/deduct — atomically checks balance and deducts credits
+ * POST /api/credits/deduct - atomically checks balance and deducts credits
  * server-side using the service-role key. Prevents client-side balance
  * tampering and race conditions from concurrent deduction calls.
  */
@@ -21,7 +21,6 @@ export async function POST(request: Request) {
 
   const supabase = await createAdminSupabase();
   if (!supabase) {
-    // No Supabase configured (local demo mode) — nothing to do server-side.
     return Response.json({ ok: true, mode: "local" });
   }
 
@@ -42,8 +41,6 @@ export async function POST(request: Request) {
   const newBalance = current.balance - amount;
   const newTotalUsed = current.total_used + amount;
 
-  // Optimistic lock: only succeed if balance still matches what we just read,
-  // so a concurrent deduction can't be silently overwritten.
   const { data: updated, error: updateError } = await supabase
     .from("credits")
     .update({
@@ -74,7 +71,6 @@ export async function POST(request: Request) {
 
   if (txnError) {
     console.error("credits/deduct: transaction log failed:", txnError.message);
-    // Balance already deducted successfully; don't fail the request over a log entry.
   }
 
   return Response.json({ ok: true, balance: newBalance, total_used: newTotalUsed });

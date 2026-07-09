@@ -18,7 +18,7 @@ export default function CreateVideoPage() {
   const [step, setStep] = useState(1);
   const [generating, setGenerating] = useState(false);
   const [done, setDone] = useState(false);
-  const [selections, setSelections] = useState<Record<string, any>>({ scriptMode: 'ai', lengthCredits: 0 });
+  const [selections, setSelections] = useState<Record<string, any>>({ scriptMode: 'ai', lengthCredits: 0, language: 'English' });
   const router = useRouter();
   const { addVideo } = useApp();
 

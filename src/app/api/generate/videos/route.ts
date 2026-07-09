@@ -17,22 +17,34 @@ export async function POST(request: Request) {
   if (hasRealKey(process.env.FAL_KEY) && images.length) {
     try {
       const clips: { url: string; poster: string; duration: number }[] = [];
-      for (const image of images.slice(0, 1)) {
-        const res = await fetch("https://fal.run/fal-ai/kling-video/v1/standard/image-to-video", {
-          method: "POST",
-          headers: {
-            Authorization: `Key ${process.env.FAL_KEY}`,
-            "Content-Type": "application/json",
-          },
-          body: JSON.stringify({ image_url: image, prompt: `${style} subtle motion`, duration: "5" }),
-        });
-        if (res.ok) {
+      const controller = new AbortController();
+      const timeoutId = setTimeout(() => controller.abort(), 30000); // 30 second timeout
+
+      try {
+        for (const image of images.slice(0, 1)) {
+          const res = await fetch("https://fal.run/fal-ai/kling-video/v1/standard/image-to-video", {
+            method: "POST",
+            headers: {
+              Authorization: `Key ${process.env.FAL_KEY}`,
+              "Content-Type": "application/json",
+            },
+            body: JSON.stringify({ image_url: image, prompt: `${style} subtle motion`, duration: "5" }),
+            signal: controller.signal,
+          });
+          if (!res.ok) {
+            console.error("Fal AI image-to-video API returned an error:", res.status, res.statusText);
+            continue; // Try next image or fall through to mock
+          }
           const data = await res.json();
           if (data?.video?.url) clips.push({ url: data.video.url, poster: image, duration: 5 });
         }
+      } finally {
+        clearTimeout(timeoutId);
       }
+      
       if (clips.length) return Response.json({ clips, source: "fal" });
-    } catch {
+    } catch (error) {
+      console.error("Error during Fal AI image-to-video generation:", error);
       /* fall through */
     }
   }

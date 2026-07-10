@@ -169,17 +169,25 @@ export default function GeneratePage() {
           voice: s.voice,
         });
         if (cancelled) return;
-        mark("render", "done");
-        log("Render complete.", "success");
-        bump();
+mark("render", "done");
 
-        // 8. Ready — persist + deduct credits
-        mark("ready", "done");
-        updateVideo(video!.id, {
-          status: "ready",
-          video_url: renderRes.video_url ?? "/demo/sample.mp4",
-          thumbnail_url: renderRes.thumbnail_url ?? images[0] ?? null,
-        });
+if (renderRes.source === "mock") {
+  log("Render failed — JSON2Video did not complete in time (fell back to mock).", "warn");
+  updateVideo(video!.id, { status: "failed" });
+  setFinished(false);
+  return;
+}
+
+log("Render complete.", "success");
+bump();
+
+// 8. Ready — persist + deduct credits
+mark("ready", "done");
+updateVideo(video!.id, {
+  status: "ready",
+  video_url: renderRes.video_url,
+  thumbnail_url: renderRes.thumbnail_url ?? images[0] ?? null,
+});
         deductCredits(video!.credits_used, `Video render — ${video!.title}`);
         log("🎉 Your video is ready to download!", "success");
         bump();

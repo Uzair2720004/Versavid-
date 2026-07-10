@@ -18,7 +18,7 @@ export async function POST(request: Request) {
     try {
       const clips: { url: string; poster: string; duration: number }[] = [];
       const controller = new AbortController();
-      const timeoutId = setTimeout(() => controller.abort(), 240000); // 30 second timeout
+      const timeoutId = setTimeout(() => controller.abort(), 240000); // 4 minute timeout — safe because maxDuration=300 overrides Vercel's default 30s limit
 
       try {
         for (const image of images.slice(0, 1)) {

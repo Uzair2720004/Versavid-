@@ -4,11 +4,6 @@ import { uid } from "@/lib/utils";
 
 export const runtime = "nodejs";
 
-/**
- * POST /api/generate/render — assembles clips, images, voiceover (ElevenLabs
- * via JSON2Video connection), captions & music into a final MP4 via
- * JSON2Video. Returns a mock render when JSON2VIDEO_API_KEY is not configured.
- */
 export async function POST(request: Request) {
   const body = await request.json().catch(() => ({}));
   const {
@@ -27,7 +22,7 @@ export async function POST(request: Request) {
     voice?: string;
   };
   const seed = uid("render");
-  void music; // temporarily unused — see TODO below
+  void music;
 
   if (hasRealKey(process.env.JSON2VIDEO_API_KEY)) {
     try {
@@ -36,25 +31,10 @@ export async function POST(request: Request) {
 
       const scenes = [
         ...clipList.map((clip) => ({
-          elements: [
-            {
-              type: "video",
-              src: clip.url,
-              duration: clip.duration ?? 5,
-              resize: "cover",
-            },
-          ],
+          elements: [{ type: "video", src: clip.url, duration: clip.duration ?? 5, resize: "cover" }],
         })),
         ...leftoverImages.map((img) => ({
-          elements: [
-            {
-              type: "image",
-              src: img,
-              duration: 4,
-              resize: "cover",
-              zoom: 2,
-            },
-          ],
+          elements: [{ type: "image", src: img, duration: 4, resize: "cover", zoom: 2 }],
         })),
       ];
 
@@ -64,7 +44,6 @@ export async function POST(request: Request) {
         .replace(/\n{2,}/g, " ")
         .trim();
 
-      // 1. Submit the render job
       const submitRes = await fetch("https://api.json2video.com/v2/movies", {
         method: "POST",
         headers: {
@@ -78,51 +57,41 @@ export async function POST(request: Request) {
           scenes,
           elements: cleanText
             ? [
-                {
-                  type: "voice",
-                  text: cleanText,
-                  model: "elevenlabs",
-                  voice: voice,
-                  connection: "elevenlabs-main",
-                },
-                {
-                  type: "subtitles",
-                  language: "auto",
-                },
+                { type: "voice", text: cleanText, model: "elevenlabs", voice: voice, connection: "elevenlabs-main" },
+                { type: "subtitles", language: "auto" },
               ]
             : [],
-          // TODO: music is currently a style label ("uplifting"), not a real
-          // audio file URL. Map labels to hosted royalty-free MP3 URLs before
-          // re-enabling this. Disabled for now so the core pipeline can be tested.
-          // ...(music
-          //   ? { elements: [{ type: "audio", src: music }] }
-          //   : {}),
         }),
       });
 
-      if (submitRes.ok) {
+      if (!submitRes.ok) {
+        const errText = await submitRes.text().catch(() => "");
+        console.error(`JSON2Video submit failed: ${submitRes.status} ${submitRes.statusText} — ${errText}`);
+      } else {
         const submitData = await submitRes.json();
         const projectId = submitData?.project;
 
-        if (projectId) {
-          // 2. Poll for completion (every 5s, up to ~2 minutes)
+        if (!projectId) {
+          console.error("JSON2Video submit succeeded but returned no project id:", JSON.stringify(submitData));
+        } else {
           const maxAttempts = 24;
+          let lastStatus = "unknown";
           for (let attempt = 0; attempt < maxAttempts; attempt++) {
             await new Promise((r) => setTimeout(r, 5000));
 
             const statusRes = await fetch(
               `https://api.json2video.com/v2/movies?project=${projectId}`,
-              {
-                headers: {
-                  "x-api-key": `${process.env.JSON2VIDEO_API_KEY}`,
-                },
-              }
+              { headers: { "x-api-key": `${process.env.JSON2VIDEO_API_KEY}` } }
             );
 
-            if (!statusRes.ok) continue;
+            if (!statusRes.ok) {
+              console.error(`JSON2Video poll failed (attempt ${attempt + 1}): ${statusRes.status}`);
+              continue;
+            }
 
             const statusData = await statusRes.json();
             const movie = statusData?.movie;
+            lastStatus = movie?.status ?? "no-status";
 
             if (movie?.status === "done" && movie?.url) {
               return Response.json({
@@ -135,15 +104,17 @@ export async function POST(request: Request) {
 
             if (movie?.status === "error") {
               console.error("JSON2Video render error:", movie?.message);
-              break; // fall through to mock
+              break;
             }
-            // else status is "queued" or "processing" — keep polling
           }
+          console.error(`JSON2Video render did not complete after ${maxAttempts} polls. Last status: ${lastStatus}, project: ${projectId}`);
         }
       }
-    } catch {
-      /* fall through */
+    } catch (err) {
+      console.error("JSON2Video render threw an exception:", err);
     }
+  } else {
+    console.error("JSON2VIDEO_API_KEY missing or invalid — using mock render.");
   }
 
   await new Promise((r) => setTimeout(r, 1100));

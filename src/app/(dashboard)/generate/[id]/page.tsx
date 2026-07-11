@@ -111,14 +111,21 @@ export default function GeneratePage() {
         log(`${images.length} images generated.`, "success");
         bump();
 
-        // 3. Video clips
-        mark("videos", "running");
-        log("Animating clips with Kling…");
-        const clipRes = await postJSON("/api/generate/videos", { images, style: s.videoStyle });
-        if (cancelled) return;
-        mark("videos", "done");
-        log(`${clipRes.clips?.length ?? 0} clips rendered.`, "success");
-        bump();
+       // 3. Video clips — skip entirely if user chose images-only
+mark("videos", "running");
+let clipRes: { clips?: { url: string; poster?: string; duration?: number }[] } = { clips: [] };
+if (s.mediaType === "images") {
+  log("Skipping video clips — images-only mode selected.");
+  mark("videos", "done");
+  log("0 clips rendered (images-only mode).", "success");
+} else {
+  log("Animating clips with Kling…");
+  clipRes = await postJSON("/api/generate/videos", { images, style: s.videoStyle });
+  if (cancelled) return;
+  mark("videos", "done");
+  log(`${clipRes.clips?.length ?? 0} clips rendered.`, "success");
+}
+bump();
 
         // 4. Voiceover
         mark("voiceover", "running");

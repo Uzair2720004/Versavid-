@@ -113,17 +113,22 @@ export default function GeneratePage() {
 
        // 3. Video clips — skip entirely if user chose images-only
 mark("videos", "running");
-let clipRes: { clips?: { url: string; poster?: string; duration?: number }[] } = { clips: [] };
+let clipRes: { clips?: { url: string; poster?: string; duration?: number }[]; source?: string } = { clips: [] };
 if (s.mediaType === "images") {
   log("Skipping video clips — images-only mode selected.");
   mark("videos", "done");
   log("0 clips rendered (images-only mode).", "success");
 } else {
   log("Animating clips with Kling…");
- clipRes = await postJSON("/api/generate/videos", { images, style: s.videoStyle, mediaType: s.mediaType });
+  clipRes = await postJSON("/api/generate/videos", { images, style: s.videoStyle, mediaType: s.mediaType });
   if (cancelled) return;
   mark("videos", "done");
-  log(`${clipRes.clips?.length ?? 0} clips rendered.`, "success");
+  if (clipRes.source === "mock") {
+    log("Kling clip generation failed this run — using still images instead so the video still completes.", "warn");
+    clipRes = { clips: [] };
+  } else {
+    log(`${clipRes.clips?.length ?? 0} clips rendered.`, "success");
+  }
 }
 bump();
 

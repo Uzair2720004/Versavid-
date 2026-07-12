@@ -31,10 +31,11 @@ async function writeScript(
             {
               role: "user",
               content:
-                `Write a punchy ${tone.toLowerCase()} voiceover script for a ${targetSeconds}-second ` +
-                `${format} YouTube video about "${topic}". Open with a strong hook, deliver tight ` +
-                `value, and end with a call to action. Label sections like [HOOK], [SCENE 2], [CTA]. ` +
-                `No stage directions other than those labels.`,
+               `Write a punchy ${tone.toLowerCase()} voiceover script for a ${targetSeconds}-second ` +
+`${format} YouTube video about "${topic}". Open with a strong hook, deliver tight ` +
+`value, and end with a call to action. This MUST have at least ${Math.max(3, Math.round(targetSeconds / 5))} distinct scenes ` +
+`(one new scene roughly every 4-5 seconds of narration) so each scene has a matching visual. ` +
+`Label sections like [HOOK], [SCENE 2], [CTA]. No stage directions other than those labels.`,
             },
           ],
         }),

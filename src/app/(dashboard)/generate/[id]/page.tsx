@@ -120,7 +120,7 @@ if (s.mediaType === "images") {
   log("0 clips rendered (images-only mode).", "success");
 } else {
   log("Animating clips with Kling…");
-  clipRes = await postJSON("/api/generate/videos", { images, style: s.videoStyle });
+ clipRes = await postJSON("/api/generate/videos", { images, style: s.videoStyle, mediaType: s.mediaType });
   if (cancelled) return;
   mark("videos", "done");
   log(`${clipRes.clips?.length ?? 0} clips rendered.`, "success");

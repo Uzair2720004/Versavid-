@@ -10,9 +10,15 @@ export const runtime = "nodejs"; export const maxDuration = 300; // allow up to 
  */
 export async function POST(request: Request) {
   const body = await request.json().catch(() => ({}));
-  const { images = [], style = "realistic" } = body as { images?: string[]; style?: string };
-  const seed = uid("clip");
-  const count = Math.max(1, Math.min(images.length || 4, 6));
+const { images = [], style = "realistic", mediaType = "videos" } = body as {
+  images?: string[];
+  style?: string;
+  mediaType?: string;
+};
+const seed = uid("clip");
+const clipTarget =
+  mediaType === "both" ? Math.max(1, Math.ceil(images.length / 2)) : images.length;
+const count = Math.max(1, Math.min(clipTarget || 4, 6));
 
   if (hasRealKey(process.env.FAL_KEY) && images.length) {
     try {
@@ -21,7 +27,7 @@ export async function POST(request: Request) {
       const timeoutId = setTimeout(() => controller.abort(), 240000); // 4 minute timeout — safe because maxDuration=300 overrides Vercel's default 30s limit
 
       try {
-        for (const image of images.slice(0, 1)) {
+        for (const image of images.slice(0, clipTarget)) {
           const res = await fetch("https://fal.run/fal-ai/kling-video/v1/standard/image-to-video", {
             method: "POST",
             headers: {

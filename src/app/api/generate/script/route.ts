@@ -101,8 +101,10 @@ export async function POST(request: Request) {
     if (error) console.error("script route: failed to save script:", error.message);
   }
 
-  // 3. Move to image generation with fal.ai.
-  const count = length === "long" ? 8 : length === "medium" ? 5 : 3;
+// 3. Move to image generation with fal.ai — count images to match actual scenes in the script.
+const sceneMatches = script.match(/\[(HOOK|SCENE\s*\d+|CTA)\]/gi) ?? [];
+const fallbackCount = length === "long" ? 8 : length === "medium" ? 5 : 3;
+const count = sceneMatches.length > 0 ? sceneMatches.length : fallbackCount;
   const { images, source: imagesSource } = await generateImages({
     topic,
     style: photoStyle,

@@ -66,6 +66,19 @@ async function writeScript(
  * of the request's auth context. They no-op gracefully when the service-role
  * key is not configured (the local-demo data layer persists instead).
  */
+/** Splits the script into per-scene text chunks based on [HOOK]/[SCENE N]/[CTA] labels. */
+function parseScenes(text: string): string[] {
+  const regex = /\[(HOOK|SCENE\s*\d+|CTA)\]/gi;
+  const matches = [...text.matchAll(regex)];
+  const scenes: string[] = [];
+  for (let i = 0; i < matches.length; i++) {
+    const start = matches[i].index! + matches[i][0].length;
+    const end = i + 1 < matches.length ? matches[i + 1].index! : text.length;
+    const chunk = text.slice(start, end).trim();
+    if (chunk) scenes.push(chunk.slice(0, 300));
+  }
+  return scenes;
+}
 export async function POST(request: Request) {
   const body = await request.json().catch(() => ({}));
   const {
@@ -101,16 +114,16 @@ export async function POST(request: Request) {
     if (error) console.error("script route: failed to save script:", error.message);
   }
 
-// 3. Move to image generation with fal.ai — count images to match actual scenes in the script.
-const sceneMatches = script.match(/\[(HOOK|SCENE\s*\d+|CTA)\]/gi) ?? [];
+// 3. Move to image generation with fal.ai — one image per actual scene in the script.
+const scenePrompts = parseScenes(script);
 const fallbackCount = length === "long" ? 8 : length === "medium" ? 5 : 3;
-const count = sceneMatches.length > 0 ? sceneMatches.length : fallbackCount;
-  const { images, source: imagesSource } = await generateImages({
-    topic,
-    style: photoStyle,
-    format,
-    count,
-  });
+const { images, source: imagesSource } = await generateImages({
+  topic,
+  style: photoStyle,
+  format,
+  count: fallbackCount,
+  prompts: scenePrompts.length ? scenePrompts : undefined,
+});
 
   // Persist the first scene image as the thumbnail.
   if (supabase && images[0]) {

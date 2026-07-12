@@ -2,52 +2,62 @@ import { hasRealKey } from "@/lib/utils";
 import { mockClips } from "@/lib/ai/mock";
 import { uid } from "@/lib/utils";
 
-export const runtime = "nodejs"; export const maxDuration = 300; // allow up to 5 minutes on this route
+export const runtime = "nodejs";
+export const maxDuration = 300; // allow up to 5 minutes on this route
 
 /**
  * POST /api/generate/videos — animates scenes into clips via fal.ai Kling.
+ * Runs one Kling call per image in PARALLEL (not sequential) since each call
+ * takes 3-4 minutes and the route only has a 5-minute total budget.
  * Returns mock clips when FAL_KEY is not configured.
  */
 export async function POST(request: Request) {
   const body = await request.json().catch(() => ({}));
-const { images = [], style = "realistic", mediaType = "videos" } = body as {
-  images?: string[];
-  style?: string;
-  mediaType?: string;
-};
-const seed = uid("clip");
-const clipTarget =
-  mediaType === "both" ? Math.max(1, Math.ceil(images.length / 2)) : images.length;
-const count = Math.max(1, Math.min(clipTarget || 4, 6));
+  const { images = [], style = "realistic", mediaType = "videos" } = body as {
+    images?: string[];
+    style?: string;
+    mediaType?: string;
+  };
+  const seed = uid("clip");
+  const clipTarget =
+    mediaType === "both" ? Math.max(1, Math.ceil(images.length / 2)) : images.length;
+  const count = Math.max(1, Math.min(clipTarget || 4, 6));
 
   if (hasRealKey(process.env.FAL_KEY) && images.length) {
     try {
-      const clips: { url: string; poster: string; duration: number }[] = [];
-      const controller = new AbortController();
-      const timeoutId = setTimeout(() => controller.abort(), 240000); // 4 minute timeout — safe because maxDuration=300 overrides Vercel's default 30s limit
+      const targetImages = images.slice(0, clipTarget);
 
-      try {
-        for (const image of images.slice(0, clipTarget)) {
-          const res = await fetch("https://fal.run/fal-ai/kling-video/v1/standard/image-to-video", {
-            method: "POST",
-            headers: {
-              Authorization: `Key ${process.env.FAL_KEY}`,
-              "Content-Type": "application/json",
-            },
-            body: JSON.stringify({ image_url: image, prompt: `${style} subtle motion`, duration: "5" }),
-            signal: controller.signal,
-          });
-          if (!res.ok) {
-            console.error("Fal AI image-to-video API returned an error:", res.status, res.statusText);
-            continue; // Try next image or fall through to mock
+      const results = await Promise.all(
+        targetImages.map(async (image) => {
+          const controller = new AbortController();
+          const timeoutId = setTimeout(() => controller.abort(), 250000); // 250s — leaves headroom under the 300s route limit
+          try {
+            const res = await fetch("https://fal.run/fal-ai/kling-video/v1/standard/image-to-video", {
+              method: "POST",
+              headers: {
+                Authorization: `Key ${process.env.FAL_KEY}`,
+                "Content-Type": "application/json",
+              },
+              body: JSON.stringify({ image_url: image, prompt: `${style} subtle motion`, duration: "5" }),
+              signal: controller.signal,
+            });
+            if (!res.ok) {
+              console.error("Fal AI image-to-video API returned an error:", res.status, res.statusText);
+              return null;
+            }
+            const data = await res.json();
+            if (data?.video?.url) return { url: data.video.url, poster: image, duration: 5 };
+            return null;
+          } catch (err) {
+            console.error("Fal AI image-to-video request failed:", err);
+            return null;
+          } finally {
+            clearTimeout(timeoutId);
           }
-          const data = await res.json();
-          if (data?.video?.url) clips.push({ url: data.video.url, poster: image, duration: 5 });
-        }
-      } finally {
-        clearTimeout(timeoutId);
-      }
-      
+        })
+      );
+
+      const clips = results.filter((c): c is { url: string; poster: string; duration: number } => !!c);
       if (clips.length) return Response.json({ clips, source: "fal" });
     } catch (error) {
       console.error("Error during Fal AI image-to-video generation:", error);

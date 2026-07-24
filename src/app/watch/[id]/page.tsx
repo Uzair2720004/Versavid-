@@ -106,7 +106,7 @@ export default async function WatchPage({ params }: WatchPageProps) {
     thumbnailUrl: [video.thumbnail_url],
     uploadDate: video.upload_date,
     duration: formatDuration(video.duration),
-    contentUrl: video.video_url,
+    contentUrl: video.video_url || undefined,
     embedUrl: `https://versavid.com/watch/${video.id}`,
     hasPart: [
       {

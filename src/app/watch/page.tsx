@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import Link from "next/link";
 import { JsonLd } from "@/components/JsonLd";
 import Nav from "@/components/landing/Nav";
 import Footer from "@/components/landing/Footer";

@@ -7,10 +7,10 @@ import {
   pricingFaqs,
   structuredData,
 } from "@/lib/seo/structured-data";
-import { PlanCards } from "@/components/credits/PlanCards";
-import { ComparisonTable } from "@/components/credits/ComparisonTable";
-import { PricingFAQ } from "@/components/credits/PricingFAQ";
-import { PricingCTA } from "@/components/credits/PricingCTA";
+import PlanCards from "@/components/credits/PlanCards";
+import ComparisonTable from "@/components/credits/ComparisonTable";
+import PricingFAQ from "@/components/credits/PricingFAQ";
+import PricingCTA from "@/components/credits/PricingCTA";
 
 export const metadata: Metadata = generateMetadata({
   title: "Pricing — Simple, Transparent Plans",
@@ -104,15 +104,15 @@ export default function PricingPage() {
                 Start free. Scale as you grow. No hidden fees, cancel anytime.
               </p>
             </div>
-            <PlanCards plans={plans} />
+            <PlanCards />
           </section>
 
           <section className="max-w-[1400px] mx-auto px-6 lg:px-10 pb-20">
-            <ComparisonTable data={comparisonData} />
+            <ComparisonTable />
           </section>
 
           <section className="max-w-[1400px] mx-auto px-6 lg:px-10 pb-20">
-            <PricingFAQ faqs={pricingFaqs} />
+            <PricingFAQ />
           </section>
 
           <section className="max-w-[1400px] mx-auto px-6 lg:px-10 pb-32">

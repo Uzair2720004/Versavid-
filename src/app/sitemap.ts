@@ -1,11 +1,13 @@
 ﻿import { MetadataRoute } from "next";
 
+type ChangeFrequency = "weekly" | "monthly" | "daily" | "always" | "hourly" | "yearly" | "never";
+
 export default function sitemap(): MetadataRoute.Sitemap {
   const baseUrl = "https://versavid.com";
   const lastModified = new Date();
 
   // Static marketing pages
-  const marketingPages = [
+  const marketingPages: Array<{ url: string; changeFrequency: ChangeFrequency; priority: number }> = [
     { url: baseUrl, changeFrequency: "weekly", priority: 1 },
     { url: `${baseUrl}/pricing`, changeFrequency: "weekly", priority: 0.9 },
     { url: `${baseUrl}/features`, changeFrequency: "monthly", priority: 0.8 },
@@ -18,7 +20,7 @@ export default function sitemap(): MetadataRoute.Sitemap {
   ];
 
   // Authenticated user pages (included for completeness, but disallowed in robots.txt)
-  const appPages = [
+  const appPages: Array<{ url: string; changeFrequency: ChangeFrequency; priority: number }> = [
     { url: `${baseUrl}/dashboard`, changeFrequency: "daily", priority: 0.8 },
     { url: `${baseUrl}/create`, changeFrequency: "daily", priority: 0.8 },
     { url: `${baseUrl}/videos`, changeFrequency: "daily", priority: 0.7 },
@@ -28,7 +30,7 @@ export default function sitemap(): MetadataRoute.Sitemap {
   ];
 
   // Blog posts (would be dynamic in production)
-  const blogPosts = [
+  const blogPosts: Array<{ url: string; changeFrequency: ChangeFrequency; priority: number }> = [
     { url: `${baseUrl}/blog/ai-video-generation-guide-2024`, changeFrequency: "monthly", priority: 0.6 },
     { url: `${baseUrl}/blog/faceless-youtube-channel-blueprint`, changeFrequency: "monthly", priority: 0.6 },
     { url: `${baseUrl}/blog/youtube-shorts-vs-long-form-strategy`, changeFrequency: "monthly", priority: 0.6 },
@@ -38,7 +40,7 @@ export default function sitemap(): MetadataRoute.Sitemap {
   ];
 
   // Public video watch pages (for video SEO)
-  const videoPages = [
+  const videoPages: Array<{ url: string; changeFrequency: ChangeFrequency; priority: number }> = [
     { url: `${baseUrl}/watch/demo-1`, changeFrequency: "monthly", priority: 0.5 },
     { url: `${baseUrl}/watch/demo-2`, changeFrequency: "monthly", priority: 0.5 },
   ];

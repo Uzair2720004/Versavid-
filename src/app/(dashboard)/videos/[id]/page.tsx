@@ -41,7 +41,7 @@ function VideoDetailPage() {
     thumbnailUrl: [video.thumbnail_url || "https://versavid.com/images/og-default.jpg"],
     uploadDate: video.created_at || new Date().toISOString(),
     duration: formatDuration(video.duration || 0),
-    contentUrl: video.video_url,
+    contentUrl: video.video_url || undefined,
     embedUrl: `https://versavid.com/watch/${video.id}`,
     hasPart: [
       {

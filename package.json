@@ -9,9 +9,7 @@
     "lint": "eslint",
     "lint:fix": "eslint --fix",
     "typecheck": "tsc --noEmit",
-    "seo:check": "node scripts/seo-check.js",
-    "sitemap:generate": "node scripts/generate-sitemap.js",
-    "postbuild": "npm run sitemap:generate"
+    "seo:check": "node scripts/seo-check.js"
   },
   "dependencies": {
     "@supabase/ssr": "^0.10.3",

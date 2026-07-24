@@ -1,7 +1,7 @@
 'use client';
 import { useState, useMemo } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { ArrowLeft, ArrowRight, Sparkles, Loader2, Check } from 'lucide-react';
+import { ArrowLeft, ArrowRight, Sparkles, Loader2, Check, AlertCircle } from 'lucide-react';
 import { Topbar } from '@/components/dashboard/Topbar';
 import AmbientField from '@/components/dashboard/AmbientField';
 import StepIndicator from '@/components/create/StepIndicator';
@@ -14,13 +14,16 @@ import { useRouter } from 'next/navigation';
 import { useApp } from '@/lib/store';
 import { uid, creditsForSettings } from '@/lib/utils';
 
+const FREE_TIER_MONTHLY_LIMIT = 5;
+
 export default function CreateVideoPage() {
   const [step, setStep] = useState(1);
   const [generating, setGenerating] = useState(false);
   const [done, setDone] = useState(false);
+  const [limitError, setLimitError] = useState<string | null>(null);
   const [selections, setSelections] = useState<Record<string, any>>({ scriptMode: 'ai', lengthCredits: 0, language: 'English' });
   const router = useRouter();
-  const { addVideo } = useApp();
+  const { addVideo, profile, updateProfile } = useApp();
 
   const update = (key: string, value: any) => setSelections((prev) => ({ ...prev, [key]: value }));
 
@@ -46,6 +49,16 @@ export default function CreateVideoPage() {
 
   const handleGenerate = () => {
     if (!canGenerate) return;
+
+    const plan = profile?.plan ?? 'free';
+    const monthlyCount = profile?.monthly_video_count ?? 0;
+
+    if (plan === 'free' && monthlyCount >= FREE_TIER_MONTHLY_LIMIT) {
+      setLimitError(`Free plan limit reached: ${FREE_TIER_MONTHLY_LIMIT} videos per month. Upgrade to continue.`);
+      return;
+    }
+
+    setLimitError(null);
     setGenerating(true);
 
     const id = crypto.randomUUID();
@@ -65,7 +78,9 @@ export default function CreateVideoPage() {
       created_at: new Date().toISOString(),
     });
 
-    router.push(`/generate/${id}`);
+    if (plan === 'free') {
+      updateProfile({ monthly_video_count: monthlyCount + 1 });
+    }
 
     router.push(`/generate/${id}`);
   };
@@ -118,11 +133,17 @@ export default function CreateVideoPage() {
             ) : (
               <div className="flex gap-8">
                 <div className="flex-1 min-w-0">
+                  {limitError && (
+                    <motion.div initial={{ opacity: 0, y: -10 }} animate={{ opacity: 1, y: 0 }} className="mb-6 p-4 rounded-xl bg-red-500/10 border border-red-500/30 flex items-center gap-3 text-red-400">
+                      <AlertCircle className="h-5 w-5 shrink-0" />
+                      <p className="text-[13px]">{limitError}</p>
+                    </motion.div>
+                  )}
                   <div className="mb-8"><StepIndicator current={step} onStepClick={setStep} /></div>
                   <div className="max-w-2xl">
                     <AnimatePresence mode="wait">
-                      {step === 1 && <Step1Script key="s1" selections={selections} update={update} />}
-                      {step === 2 && <Step2Media key="s2" selections={selections} update={update} />}
+                      {step === 1 && <Step1Script key="s1" selections={selections} update={update} isFreeTier={profile?.plan === 'free'} />}
+                      {step === 2 && <Step2Media key="s2" selections={selections} update={update} isFreeTier={profile?.plan === 'free'} />}
                       {step === 3 && <Step3Voice key="s3" selections={selections} update={update} />}
                       {step === 4 && <Step4Review key="s4" selections={selections} credits={credits} />}
                     </AnimatePresence>

@@ -24,13 +24,16 @@ exception when duplicate_object then null; end $$;
 
 -- profiles -------------------------------------------------------------------
 create table if not exists public.profiles (
-  id          uuid primary key references auth.users (id) on delete cascade,
-  email       text not null,
-  full_name   text,
-  avatar_url  text,
-  country     text,
-  brand_name  text,
-  created_at  timestamptz not null default now()
+  id                    uuid primary key references auth.users (id) on delete cascade,
+  email                 text not null,
+  full_name             text,
+  avatar_url            text,
+  country               text,
+  brand_name            text,
+  created_at            timestamptz not null default now(),
+  plan                  text not null default 'free' check (plan in ('free', 'creator', 'pro', 'agency')),
+  monthly_video_count   integer not null default 0,
+  signup_ip             text
 );
 
 -- credits --------------------------------------------------------------------

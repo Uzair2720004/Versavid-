@@ -1,21 +1,21 @@
 ﻿'use client';
 import { useRef } from 'react';
 import { motion } from 'framer-motion';
-import { Sparkles, Upload, Smartphone, Monitor, FileText } from 'lucide-react';
+import { Sparkles, Upload, Smartphone, Monitor, FileText, Lock } from 'lucide-react';
 
 const formats = [
   { id: 'vertical', label: 'Vertical', ratio: '9:16', platform: 'Shorts / Reels', icon: 'Smartphone' },
   { id: 'horizontal', label: 'Horizontal', ratio: '16:9', platform: 'Long-form', icon: 'Monitor' },
 ];
 const lengths = [
-  { id: 'short', label: 'Short', duration: '15-30s', credits: 1 },
-  { id: 'medium', label: 'Medium', duration: '1-3 min', credits: 3 },
-  { id: 'long', label: 'Long', duration: '5-10 min', credits: 8 },
+  { id: 'short', label: 'Short', duration: '15-30s', credits: 1, tier: 'free' as const },
+  { id: 'medium', label: 'Medium', duration: '1-3 min', credits: 3, tier: 'paid' as const },
+  { id: 'long', label: 'Long', duration: '5-10 min', credits: 8, tier: 'paid' as const },
 ];
 const tones = ['Energetic', 'Educational', 'Cinematic', 'Casual', 'Inspirational', 'Humorous', 'Professional', 'Storytelling'];
 const iconMap: Record<string, any> = { Smartphone, Monitor };
 
-export default function Step1Script({ selections, update }: { selections: Record<string, any>; update: (k: string, v: any) => void }) {
+export default function Step1Script({ selections, update, isFreeTier }: { selections: Record<string, any>; update: (k: string, v: any) => void; isFreeTier: boolean }) {
   const scriptMode = selections.scriptMode || 'ai';
   const fileInputRef = useRef<HTMLInputElement>(null);
 
@@ -117,15 +117,21 @@ export default function Step1Script({ selections, update }: { selections: Record
         </div>
       </div>
 
-      <div>
+<div>
         <label className="text-[13px] font-medium text-white mb-3 block">Length</label>
         <div className="flex flex-wrap gap-2">
           {lengths.map((l) => {
             const isActive = selections.length === l.label;
+            const isLocked = isFreeTier && l.tier === 'paid';
             return (
-              <button key={l.id} onClick={() => { update('length', l.label); update('lengthCredits', l.credits); }}
-                className={'px-4 py-2.5 rounded-lg text-[12px] font-medium transition-all duration-300 ' + (isActive ? 'bg-gradient-to-r from-fuchsia-500 to-purple-600 text-white' : 'bg-white/5 text-[#a8aeb8] hover:bg-white/10 hover:text-white')}>
+              <button key={l.id} onClick={() => !isLocked && (update('length', l.label), update('lengthCredits', l.credits))} disabled={isLocked}
+                className={'relative px-4 py-2.5 rounded-lg text-[12px] font-medium transition-all duration-300 ' + 
+                  (isActive ? 'bg-gradient-to-r from-fuchsia-500 to-purple-600 text-white' : 
+                    isLocked ? 'bg-white/3 text-white/30 cursor-not-allowed' 
+                    : 'bg-white/5 text-[#a8aeb8] hover:bg-white/10 hover:text-white')}>
+                {isLocked && <Lock className="absolute -top-2 -right-2 h-3 w-3 text-amber-400" />}
                 {l.label}<span className="ml-1.5 text-[10px] opacity-60">{l.duration}</span>
+                {isLocked && <span className="block text-[9px] text-amber-400 mt-1">Upgrade to unlock</span>}
               </button>
             );
           })}

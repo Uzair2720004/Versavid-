@@ -299,16 +299,21 @@ export function AppProvider({ children }: { children: ReactNode }) {
             if (next.profile) return next.profile;
           } catch (_) {}
         }
-        return {
+return {
           id: user.id,
           email,
           full_name: fullName,
           avatar_url: null,
+          country: "United States",
+          brand_name: "",
           created_at: user.created_at ?? new Date().toISOString(),
+          plan: "free",
+          monthly_video_count: 0,
+          signup_ip: null,
         };
       }
 
-      const profile: Profile = {
+const profile: Profile = {
         id: uid("user"),
         email,
         full_name: fullName,
@@ -316,6 +321,9 @@ export function AppProvider({ children }: { children: ReactNode }) {
         country: "United States",
         brand_name: "",
         created_at: new Date().toISOString(),
+        plan: "free",
+        monthly_video_count: 0,
+        signup_ip: null,
       };
       setState(freshState(profile));
       return profile;
@@ -332,12 +340,17 @@ export function AppProvider({ children }: { children: ReactNode }) {
         const next = await loadUserData(supabase, data.user.id);
         setState(next);
         if (next.profile) return next.profile;
-        return {
+return {
           id: data.user.id,
           email: data.user.email ?? email,
           full_name: (data.user.user_metadata?.full_name as string) ?? "",
           avatar_url: null,
+          country: "United States",
+          brand_name: "",
           created_at: data.user.created_at ?? new Date().toISOString(),
+          plan: "free",
+          monthly_video_count: 0,
+          signup_ip: null,
         };
       }
 
@@ -347,7 +360,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
       if (existing && existing.email === email && stateRef.current.credits) {
         return existing;
       }
-      const profile: Profile = {
+const profile: Profile = {
         id: uid("user"),
         email,
         full_name: email.split("@")[0].replace(/[._-]/g, " ").replace(/\b\w/g, (c) => c.toUpperCase()),
@@ -355,6 +368,9 @@ export function AppProvider({ children }: { children: ReactNode }) {
         country: "United States",
         brand_name: "",
         created_at: new Date().toISOString(),
+        plan: "free",
+        monthly_video_count: 0,
+        signup_ip: null,
       };
       setState(freshState(profile));
       return profile;
@@ -373,7 +389,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
       return;
     }
 
-    const profile: Profile = {
+const profile: Profile = {
       id: uid("user"),
       email: "creator@gmail.com",
       full_name: "Alex Rivera",
@@ -381,6 +397,9 @@ export function AppProvider({ children }: { children: ReactNode }) {
       country: "United States",
       brand_name: "Rivera Studio",
       created_at: new Date().toISOString(),
+      plan: "free",
+      monthly_video_count: 0,
+      signup_ip: null,
     };
     setState(freshState(profile));
   }, [supabase]);

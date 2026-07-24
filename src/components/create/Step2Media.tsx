@@ -1,11 +1,11 @@
 ﻿'use client';
 import { motion } from 'framer-motion';
-import { Image, Video, Layers, Upload, X } from 'lucide-react';
+import { Image, Video, Layers, Upload, X, Lock } from 'lucide-react';
 
 const mediaTypes = [
-  { id: 'images', label: 'Images only', description: 'AI-generated photos with motion', icon: 'Image' },
-  { id: 'videos', label: 'Videos only', description: 'AI-generated video clips', icon: 'Video' },
-  { id: 'mixed', label: 'Mixed media', description: 'Blend of images and video clips', icon: 'Layers' },
+  { id: 'images', label: 'Images only', description: 'AI-generated photos with motion', icon: 'Image', tier: 'free' as const },
+  { id: 'videos', label: 'Videos only', description: 'AI-generated video clips', icon: 'Video', tier: 'paid' as const },
+  { id: 'mixed', label: 'Mixed media', description: 'Blend of images and video clips', icon: 'Layers', tier: 'paid' as const },
 ];
 const photoStyles = [
   { id: 'photorealistic', label: 'Photorealistic', preview: 'from-blue-400/30 to-cyan-600/10' },
@@ -46,7 +46,7 @@ function StyleGrid({ options, selected, onSelect }: { options: any[]; selected: 
   );
 }
 
-export default function Step2Media({ selections, update }: { selections: Record<string, any>; update: (k: string, v: any) => void }) {
+export default function Step2Media({ selections, update, isFreeTier }: { selections: Record<string, any>; update: (k: string, v: any) => void; isFreeTier: boolean }) {
   return (
     <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -20 }} transition={{ duration: 0.5, ease: [0.16, 1, 0.3, 1] }} className="space-y-8">
       <div>
@@ -55,16 +55,22 @@ export default function Step2Media({ selections, update }: { selections: Record<
           {mediaTypes.map((m) => {
             const Icon = iconMap[m.icon];
             const isActive = selections.mediaType === m.id;
+            const isLocked = isFreeTier && m.tier === 'paid';
             return (
-              <button key={m.id} onClick={() => update('mediaType', m.id)}
-                className={'relative p-4 rounded-xl border text-left transition-all duration-300 overflow-hidden ' + (isActive ? 'glass-strong border-fuchsia-400/40' : 'bg-[#0a0a0a] border-white/5 hover:border-white/15')}>
+              <button key={m.id} onClick={() => !isLocked && update('mediaType', m.id)} disabled={isLocked}
+                className={'relative p-4 rounded-xl border text-left transition-all duration-300 overflow-hidden ' + 
+                  (isActive ? 'glass-strong border-fuchsia-400/40' : 
+                    isLocked ? 'bg-[#0a0a0a] border-white/5 opacity-50 cursor-not-allowed' 
+                    : 'bg-[#0a0a0a] border-white/5 hover:border-white/15')}>
                 {isActive && <div className="absolute inset-0 bg-gradient-to-br from-fuchsia-500/10 to-purple-600/5" />}
+                {isLocked && <div className="absolute inset-0 bg-black/60 flex items-center justify-center"><Lock className="h-5 w-5 text-white/30" /></div>}
                 <div className="relative">
-                  <div className={'h-9 w-9 rounded-lg flex items-center justify-center mb-3 ' + (isActive ? 'bg-fuchsia-500/20' : 'bg-white/5')}>
-                    <Icon className="h-4 w-4 text-fuchsia-400" />
+                  <div className={'h-9 w-9 rounded-lg flex items-center justify-center mb-3 ' + (isActive ? 'bg-fuchsia-500/20' : isLocked ? 'bg-white/3' : 'bg-white/5')}>
+                    <Icon className={'h-4 w-4 ' + (isLocked ? 'text-white/30' : 'text-fuchsia-400')} />
                   </div>
                   <p className="text-[13px] font-medium text-white">{m.label}</p>
                   <p className="text-[10px] text-[#767D88] mt-0.5">{m.description}</p>
+                  {isLocked && <p className="text-[10px] text-amber-400 mt-1">Upgrade to unlock</p>}
                 </div>
               </button>
             );
@@ -77,7 +83,7 @@ export default function Step2Media({ selections, update }: { selections: Record<
           <StyleGrid options={photoStyles} selected={selections.photoStyle || ''} onSelect={(v) => update('photoStyle', v)} />
         </div>
       )}
-      {(selections.mediaType === 'videos' || selections.mediaType === 'mixed') && (
+      {(selections.mediaType === 'videos' || selections.mediaType === 'mixed') && !isFreeTier && (
         <div>
           <label className="text-[13px] font-medium text-white mb-3 block">Video clip style</label>
           <StyleGrid options={videoStyles} selected={selections.videoStyle || ''} onSelect={(v) => update('videoStyle', v)} />

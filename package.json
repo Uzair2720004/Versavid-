@@ -6,7 +6,12 @@
     "dev": "next dev",
     "build": "next build",
     "start": "next start",
-    "lint": "eslint"
+    "lint": "eslint",
+    "lint:fix": "eslint --fix",
+    "typecheck": "tsc --noEmit",
+    "seo:check": "node scripts/seo-check.js",
+    "sitemap:generate": "node scripts/generate-sitemap.js",
+    "postbuild": "npm run sitemap:generate"
   },
   "dependencies": {
     "@supabase/ssr": "^0.10.3",

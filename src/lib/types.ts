@@ -21,6 +21,9 @@ export interface Profile {
   country?: string;
   brand_name?: string;
   created_at: string;
+  plan: 'free' | 'creator' | 'pro' | 'agency';
+  monthly_video_count: number;
+  signup_ip?: string | null;
 }
 
 export interface Credits {
@@ -40,6 +43,7 @@ export interface VideoSettings {
   length: VideoLength;
   tone: string;
   generationMode: GenerationMode;
+  mediaType: "images" | "videos" | "mixed";
   photoStyle: string;
   videoStyle: string;
   referenceImage?: string | null;

@@ -3,16 +3,58 @@
 
 import { placeholderImage } from "@/lib/utils";
 
-export function mockScript(topic: string, tone: string, length: string): string {
+function mockScriptByLanguage(topic: string, tone: string, length: string, language: string): string {
   const scenes = length === "long" ? 8 : length === "medium" ? 5 : 3;
-  const lines: string[] = [
-    `[HOOK] You won't believe what most people get wrong about ${topic}.`,
-  ];
+
+  const templates: Record<string, { hook: string; scene: string; cta: string }> = {
+    English: {
+      hook: `You won't believe what most people get wrong about ${topic}.`,
+      scene: `Here's point ${"{{i}}"}: a ${tone.toLowerCase()} take on ${topic} that actually lands.`,
+      cta: `Follow for more on ${topic}. Hit subscribe — you'll thank me later.`,
+    },
+    Urdu: {
+      hook: `آپ یقین نہیں کریں گے کہ اکثر لوگ ${topic} کے بارے میں کیا غلط سمجھتے ہیں۔`,
+      scene: `یہ رہا نکاتہ ${"{{i}"}: ${topic} پر ${tone.toLowerCase()} انداز جو اصل میں کام کرتا ہے۔`,
+      cta: `${topic} پر مزید کے لیے فالو کریں। سبسکرائب بٹن دبائیں — آپ شکر گزار ہوں گے۔`,
+    },
+    Spanish: {
+      hook: `No creerás lo que la mayoría de la gente entiende mal sobre ${topic}.`,
+      scene: `Aquí está el punto ${"{{i}"}: una visión ${tone.toLowerCase()} sobre ${topic} que realmente funciona.`,
+      cta: `Síguenos para más sobre ${topic}. Suscríbete — te lo agradecerás.`,
+    },
+    French: {
+      hook: `Vous ne croirez pas ce que la plupart des gens comprennent mal à propos de ${topic}.`,
+      scene: `Voici le point ${"{{i}"}: une approche ${tone.toLowerCase()} sur ${topic} qui fonctionne vraiment.`,
+      cta: `Suivez-nous pour plus sur ${topic}. Abonnez-vous — vous nous remercierez plus tard.`,
+    },
+    German: {
+      hook: `Du wirst nicht glauben, was die meisten Leute über ${topic} falsch verstehen.`,
+      scene: `Hier ist Punkt ${"{{i}"}: ein ${tone.toLowerCase()} Blick auf ${topic}, der tatsächlich funktioniert.`,
+      cta: `Folge uns für mehr zu ${topic}. Abonnieren — du wirst es nicht bereuen.`,
+    },
+    Portuguese: {
+      hook: `Você não vai acreditar no que a maioria das pessoas erra sobre ${topic}.`,
+      scene: `Aqui está o ponto ${"{{i}"}: uma visão ${tone.toLowerCase()} sobre ${topic} que realmente funciona.`,
+      cta: `Siga para mais sobre ${topic}. Inscreva-se — você vai agradecer depois.`,
+    },
+    Arabic: {
+      hook: `لن تصدق ما يخطئ فيه معظم الناس حول ${topic}.`,
+      scene: `إليك النقطة ${"{{i}"}: نظرة ${tone.toLowerCase()} على ${topic} تعمل حقاً.`,
+      cta: `تابع للمزيد حول ${topic}. اشترك — ستشكر نفسك لاحقاً.`,
+    },
+  };
+
+  const t = templates[language] ?? templates.English;
+  const lines: string[] = [`[HOOK] ${t.hook}`];
   for (let i = 1; i < scenes - 1; i++) {
-    lines.push(`[SCENE ${i + 1}] Here's point ${i}: a ${tone.toLowerCase()} take on ${topic} that actually lands.`);
+    lines.push(`[SCENE ${i + 1}] ${t.scene.replace("{{i}}", String(i))}`);
   }
-  lines.push(`[CTA] Follow for more on ${topic}. Hit subscribe — you'll thank me later.`);
+  lines.push(`[CTA] ${t.cta}`);
   return lines.join("\n\n");
+}
+
+export function mockScript(topic: string, tone: string, length: string, language = "English"): string {
+  return mockScriptByLanguage(topic, tone, length, language);
 }
 
 export function mockImages(seed: string, count = 5): string[] {

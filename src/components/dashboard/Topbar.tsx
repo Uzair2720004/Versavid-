@@ -17,7 +17,7 @@ export function Topbar() {
   const { profile } = useApp();
   const pathname = usePathname();
   const initial = (profile?.full_name || 'U').charAt(0).toUpperCase();
-  const pageName = pageNames[pathname] || 'Studio';
+  const pageName = pathname ? pageNames[pathname] : 'Studio';
 
   return (
     <motion.header

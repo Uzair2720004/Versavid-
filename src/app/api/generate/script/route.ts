@@ -10,9 +10,12 @@ async function writeScript(
   topic: string,
   tone: string,
   length: string,
-  format: string
+  format: string,
+  language: string
 ): Promise<{ script: string; source: string }> {
   const key = process.env.ANTHROPIC_API_KEY;
+
+  const languageName = mapLanguageForPrompt(language);
 
   if (hasRealKey(key)) {
     try {
@@ -31,11 +34,12 @@ async function writeScript(
             {
               role: "user",
               content:
-               `Write a punchy ${tone.toLowerCase()} voiceover script for a ${targetSeconds}-second ` +
-`${format} YouTube video about "${topic}". Open with a strong hook, deliver tight ` +
-`value, and end with a call to action. This MUST have at least ${Math.max(3, Math.round(targetSeconds / 5))} distinct scenes ` +
-`(one new scene roughly every 4-5 seconds of narration) so each scene has a matching visual. ` +
-`Label sections like [HOOK], [SCENE 2], [CTA]. No stage directions other than those labels.`,
+                `Write a punchy ${tone.toLowerCase()} voiceover script for a ${targetSeconds}-second ` +
+                `${format} YouTube video about "${topic}". Open with a strong hook, deliver tight ` +
+                `value, and end with a call to action. This MUST have at least ${Math.max(3, Math.round(targetSeconds / 5))} distinct scenes ` +
+                `(one new scene roughly every 4-5 seconds of narration) so each scene has a matching visual. ` +
+                `Write the ENTIRE script — hook, scenes, and CTA — in ${languageName}. ` +
+                `Label sections like [HOOK], [SCENE 2], [CTA]. No stage directions other than those labels.`,
             },
           ],
         }),
@@ -52,7 +56,20 @@ async function writeScript(
 
   // Small delay so the UI shows a "working" state, then mock content.
   await new Promise((r) => setTimeout(r, 600));
-  return { script: mockScript(topic, tone, length), source: "mock" };
+  return { script: mockScript(topic, tone, length, language), source: "mock" };
+}
+
+function mapLanguageForPrompt(language: string): string {
+  const map: Record<string, string> = {
+    English: "English",
+    "Hindi/Urdu": "Urdu",
+    Spanish: "Spanish",
+    French: "French",
+    German: "German",
+    Portuguese: "Portuguese",
+    Arabic: "Arabic",
+  };
+  return map[language] ?? "English";
 }
 
 /**
@@ -91,6 +108,7 @@ export async function POST(request: Request) {
     photoStyle = "photoreal",
     scriptMode = "ai",
     customScript = "",
+    language = "English",
   } = body as Record<string, string>;
 
   // 1. Produce the script — user-supplied or generated.
@@ -100,7 +118,7 @@ export async function POST(request: Request) {
     script = customScript.trim();
     source = "user";
   } else {
-    ({ script, source } = await writeScript(topic, tone, length, format));
+    ({ script, source } = await writeScript(topic, tone, length, format, language));
   }
 
   // Resolve the admin (service-role) client once (null when not configured).

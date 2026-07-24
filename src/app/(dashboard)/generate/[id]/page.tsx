@@ -29,7 +29,7 @@ export default function GeneratePage() {
   const params = useParams<{ id: string }>();
   const router = useRouter();
   const { videos, updateVideo, deductCredits, credits: creditsState } = useApp();
-  const video = videos.find((v) => v.id === params.id);
+  const video = videos.find((v) => v.id === params?.id);
   const alreadyReady = video?.status === "ready";
 
   const [steps, setSteps] = useState<GenStep[]>(() =>
@@ -74,7 +74,7 @@ export default function GeneratePage() {
         // 1. Script
         mark("script", "running");
         log("Writing the script with Claude…");
-        const scriptRes = await postJSON("/api/generate/script", {
+const scriptRes = await postJSON("/api/generate/script", {
           videoId: video!.id,
           topic: s.topic,
           tone: s.tone,
@@ -83,6 +83,7 @@ export default function GeneratePage() {
           photoStyle: s.photoStyle,
           scriptMode: s.scriptMode,
           customScript: video!.script ?? "",
+          language: s.language,
         });
         if (cancelled) return;
         const script: string = scriptRes.script ?? "";
@@ -111,26 +112,41 @@ export default function GeneratePage() {
         log(`${images.length} images generated.`, "success");
         bump();
 
-       // 3. Video clips — skip entirely if user chose images-only
-mark("videos", "running");
-let clipRes: { clips?: { url: string; poster?: string; duration?: number }[]; source?: string } = { clips: [] };
-if (s.mediaType === "images") {
-  log("Skipping video clips — images-only mode selected.");
-  mark("videos", "done");
-  log("0 clips rendered (images-only mode).", "success");
-} else {
-  log("Animating clips with Kling…");
-  clipRes = await postJSON("/api/generate/videos", { images, style: s.videoStyle, mediaType: s.mediaType });
-  if (cancelled) return;
-  mark("videos", "done");
-  if (clipRes.source === "mock") {
-    log("Kling clip generation failed this run — using still images instead so the video still completes.", "warn");
-    clipRes = { clips: [] };
-  } else {
-    log(`${clipRes.clips?.length ?? 0} clips rendered.`, "success");
-  }
-}
-bump();
+// 3. Video clips — skip entirely if user chose images-only
+ mark("videos", "running");
+ let clipRes: { clips?: { url: string; poster?: string; duration?: number }[]; source?: string } = { clips: [] };
+ if (s.mediaType === "images") {
+   log("Skipping video clips — images-only mode selected.");
+   mark("videos", "done");
+   log("0 clips rendered (images-only mode).", "success");
+ } else {
+   log("Animating clips with Kling…");
+   clipRes = await postJSON("/api/generate/videos", { images, style: s.videoStyle, mediaType: s.mediaType });
+   if (cancelled) return;
+
+   // In "videos" mode: never fall back to still images. Retry once on failure, then fail the generation.
+   if (s.mediaType === "videos" && clipRes.source === "mock") {
+     log("Kling clip generation failed — retrying once…", "warn");
+     clipRes = await postJSON("/api/generate/videos", { images, style: s.videoStyle, mediaType: s.mediaType });
+     if (cancelled) return;
+   }
+
+   mark("videos", "done");
+   if (clipRes.source === "mock") {
+     if (s.mediaType === "videos") {
+       log("Kling clip generation failed after retry — failing video generation (videos mode requires clips).", "warn");
+       updateVideo(video!.id, { status: "failed" });
+       setFinished(false);
+       return;
+     } else {
+       log("Kling clip generation failed this run — using still images instead so the video still completes.", "warn");
+       clipRes = { clips: [] };
+     }
+   } else {
+     log(`${clipRes.clips?.length ?? 0} clips rendered.`, "success");
+   }
+ }
+ bump();
 
         // 4. Voiceover
         mark("voiceover", "running");
@@ -175,7 +191,8 @@ bump();
         const renderRes = await postJSON("/api/generate/render", {
           format: s.format,
           clips: clipRes.clips ?? [],
-          images,
+          images: s.mediaType === "videos" ? [] : images,
+          mediaType: s.mediaType,
           music: s.music,
           script,
           voice: s.voice,

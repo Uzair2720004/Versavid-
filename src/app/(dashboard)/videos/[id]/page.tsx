@@ -8,7 +8,7 @@ export default function VideoDetailPage() {
   const router = useRouter();
   const { videos } = useApp();
 
-  const video = videos.find((v) => v.id === params.id);
+  const video = videos.find((v) => v.id === params?.id);
 
   if (!video) {
     return (

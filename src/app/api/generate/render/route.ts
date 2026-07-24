@@ -10,6 +10,7 @@ export async function POST(request: Request) {
     format = "9:16",
     clips = [],
     images = [],
+    mediaType = "both",
     music = "uplifting",
     script = "",
     voice = "21m00Tcm4TlvDq8ikWAM",
@@ -17,6 +18,7 @@ export async function POST(request: Request) {
     format?: string;
     clips?: unknown[];
     images?: string[];
+    mediaType?: "images" | "videos" | "both";
     music?: string;
     script?: string;
     voice?: string;
@@ -27,7 +29,7 @@ export async function POST(request: Request) {
   if (hasRealKey(process.env.JSON2VIDEO_API_KEY)) {
     try {
       const clipList = clips as { url: string; poster?: string; duration?: number }[];
-      const leftoverImages = (images as string[]).slice(clipList.length);
+      const leftoverImages = mediaType === "videos" ? [] : (images as string[]).slice(clipList.length);
 
       const scenes = [
         ...clipList.map((clip) => ({

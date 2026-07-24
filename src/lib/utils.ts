@@ -1,5 +1,5 @@
 import { LENGTHS } from "./constants";
-import type { VideoLength, MediaType, VideoSettings } from "./types";
+import type { VideoLength, GenerationMode, VideoSettings } from "./types";
 
 /** Tiny classnames joiner. */
 export function cn(...parts: Array<string | false | null | undefined>): string {
@@ -18,15 +18,18 @@ export function uid(prefix = "id"): string {
 export function creditsForSettings(settings: Partial<VideoSettings>): number {
   const base = LENGTHS.find((l) => l.value === settings.length)?.credits ?? 3;
   let total = base;
-  if (settings.mediaType === "videos") total += 2;
-  if (settings.mediaType === "both") total += 1;
+  if (settings.generationMode === "ai_images_plus_ai_video") total += 2;
+  if (settings.generationMode === "stock_only" || settings.generationMode === "stock_plus_ai_images") total += 1;
   if (settings.music && settings.music !== "none") total += 1;
   return total;
 }
 
-export function creditsForLength(length: VideoLength, media: MediaType): number {
+export function creditsForLength(length: VideoLength, mode: GenerationMode): number {
   const base = LENGTHS.find((l) => l.value === length)?.credits ?? 3;
-  return base + (media === "videos" ? 2 : media === "both" ? 1 : 0);
+  let extra = 0;
+  if (mode === "ai_images_plus_ai_video") extra = 2;
+  else if (mode === "stock_only" || mode === "stock_plus_ai_images") extra = 1;
+  return base + extra;
 }
 
 export function formatDate(iso: string): string {

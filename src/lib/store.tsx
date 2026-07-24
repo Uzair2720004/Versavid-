@@ -19,6 +19,7 @@ import type {
   VideoRecord,
   Transaction,
   VideoSettings,
+  GenerationMode,
 } from "./types";
 
 /**
@@ -109,13 +110,13 @@ function seedVideos(userId: string): VideoRecord[] {
     credits_used: credits,
     duration,
     created_at: new Date(now - ageHrs * 3600_000).toISOString(),
-    settings: {
+settings: {
       scriptMode: "ai",
       topic,
       format,
       length: duration > 60 ? "long" : duration > 30 ? "medium" : "short",
       tone: "Energetic",
-      mediaType: "both",
+      generationMode: "ai_images_plus_ai_video",
       photoStyle: style,
       videoStyle: "realistic",
       voice: "nova",

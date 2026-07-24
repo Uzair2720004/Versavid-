@@ -13,19 +13,26 @@ export const maxDuration = 300; // allow up to 5 minutes on this route
  */
 export async function POST(request: Request) {
   const body = await request.json().catch(() => ({}));
-  const { images = [], style = "realistic", mediaType = "videos" } = body as {
+  const { images = [], style = "realistic", generationMode = "ai_images_plus_ai_video" } = body as {
     images?: string[];
     style?: string;
-    mediaType?: string;
+    generationMode?: string;
   };
   const seed = uid("clip");
-  const clipTarget =
-    mediaType === "both" ? Math.max(1, Math.ceil(images.length / 2)) : images.length;
-  const count = Math.max(1, Math.min(clipTarget || 4, 6));
+  
+  // Only ai_images_plus_ai_video mode actually generates video clips
+  // stock_only and stock_plus_ai_images use stock footage instead
+  // ai_images_only doesn't call this endpoint at all
+  if (generationMode !== "ai_images_plus_ai_video") {
+    await new Promise((r) => setTimeout(r, 300));
+    return Response.json({ clips: [], source: "mock" });
+  }
+
+  const count = Math.max(1, Math.min(images.length || 4, 6));
 
   if (hasRealKey(process.env.FAL_KEY) && images.length) {
     try {
-      const targetImages = images.slice(0, clipTarget);
+      const targetImages = images.slice(0, count);
 
       const results = await Promise.all(
         targetImages.map(async (image) => {

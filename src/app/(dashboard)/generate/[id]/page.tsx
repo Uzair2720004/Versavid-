@@ -11,6 +11,19 @@ import { GEN_STEPS } from "@/lib/constants";
 import type { GenStep, LogEntry } from "@/lib/types";
 import { cn } from "@/lib/utils";
 
+function parseScenes(text: string): string[] {
+  const regex = /\[(HOOK|SCENE\s*\d+|CTA)\]/gi;
+  const matches = [...text.matchAll(regex)];
+  const scenes: string[] = [];
+  for (let i = 0; i < matches.length; i++) {
+    const start = matches[i].index! + matches[i][0].length;
+    const end = i + 1 < matches.length ? matches[i + 1].index! : text.length;
+    const chunk = text.slice(start, end).trim();
+    if (chunk) scenes.push(chunk.slice(0, 300));
+  }
+  return scenes;
+}
+
 function now(): string {
   const d = new Date();
   return d.toLocaleTimeString("en-US", { hour12: false });
@@ -92,7 +105,7 @@ const scriptRes = await postJSON("/api/generate/script", {
         log(`Script ready (${scriptRes.source}).`, "success");
         bump();
 
-        // 2. Images — the script step already kicked these off with fal.ai;
+// 2. Images — the script step already kicked these off with fal.ai;
         // reuse them, only falling back to a direct call if none came back.
         mark("images", "running");
         log("Generating scene images with Flux…");
@@ -112,41 +125,65 @@ const scriptRes = await postJSON("/api/generate/script", {
         log(`${images.length} images generated.`, "success");
         bump();
 
-// 3. Video clips — skip entirely if user chose images-only
- mark("videos", "running");
- let clipRes: { clips?: { url: string; poster?: string; duration?: number }[]; source?: string } = { clips: [] };
- if (s.mediaType === "images") {
-   log("Skipping video clips — images-only mode selected.");
-   mark("videos", "done");
-   log("0 clips rendered (images-only mode).", "success");
- } else {
-   log("Animating clips with Kling…");
-   clipRes = await postJSON("/api/generate/videos", { images, style: s.videoStyle, mediaType: s.mediaType });
-   if (cancelled) return;
+        // 3. Footage/Video — behavior depends on generationMode
+        mark("videos", "running");
+        let clipRes: { clips?: { url: string; poster?: string; duration?: number }[]; source?: string } = { clips: [] };
+        let footage: { url: string; poster?: string; duration?: number }[] = [];
 
-   // In "videos" mode: never fall back to still images. Retry once on failure, then fail the generation.
-   if (s.mediaType === "videos" && clipRes.source === "mock") {
-     log("Kling clip generation failed — retrying once…", "warn");
-     clipRes = await postJSON("/api/generate/videos", { images, style: s.videoStyle, mediaType: s.mediaType });
-     if (cancelled) return;
-   }
+        const mode = s.generationMode;
 
-   mark("videos", "done");
-   if (clipRes.source === "mock") {
-     if (s.mediaType === "videos") {
-       log("Kling clip generation failed after retry — failing video generation (videos mode requires clips).", "warn");
-       updateVideo(video!.id, { status: "failed" });
-       setFinished(false);
-       return;
-     } else {
-       log("Kling clip generation failed this run — using still images instead so the video still completes.", "warn");
-       clipRes = { clips: [] };
-     }
-   } else {
-     log(`${clipRes.clips?.length ?? 0} clips rendered.`, "success");
-   }
- }
- bump();
+        if (mode === "stock_only") {
+          // Stock video mode: call /api/generate/footage for video clips
+          log("Fetching stock footage (video) from Pexels…");
+          const footageRes = await postJSON("/api/generate/footage", {
+            sceneTexts: parseScenes(script),
+            type: "video",
+            topic: s.topic,
+          });
+          if (cancelled) return;
+          footage = footageRes.footage ?? [];
+          mark("videos", "done");
+          log(`${footage.length} stock footage clips retrieved.`, "success");
+        } else if (mode === "stock_plus_ai_images") {
+          // Stock photo mode: call /api/generate/footage for photos (AI images mixed in later)
+          log("Fetching stock photos from Pexels…");
+          const footageRes = await postJSON("/api/generate/footage", {
+            sceneTexts: parseScenes(script),
+            type: "photo",
+            topic: s.topic,
+          });
+          if (cancelled) return;
+          footage = footageRes.footage ?? [];
+          mark("videos", "done");
+          log(`${footage.length} stock photos retrieved.`, "success");
+        } else if (mode === "ai_images_plus_ai_video") {
+          // AI video mode (old "videos"): animate images with Kling
+          log("Animating clips with Kling…");
+          clipRes = await postJSON("/api/generate/videos", { images, style: s.videoStyle });
+          if (cancelled) return;
+
+          if (clipRes.source === "mock") {
+            log("Kling clip generation failed — retrying once…", "warn");
+            clipRes = await postJSON("/api/generate/videos", { images, style: s.videoStyle });
+            if (cancelled) return;
+          }
+
+          mark("videos", "done");
+          if (clipRes.source === "mock") {
+            log("Kling clip generation failed after retry — failing video generation (ai_images_plus_ai_video mode requires clips).", "warn");
+            updateVideo(video!.id, { status: "failed" });
+            setFinished(false);
+            return;
+          } else {
+            log(`${clipRes.clips?.length ?? 0} clips rendered.`, "success");
+          }
+        } else {
+          // ai_images_only (old "images"): skip video entirely
+          log("Skipping video clips — ai_images_only mode selected.");
+          mark("videos", "done");
+          log("0 clips rendered (ai_images_only mode).", "success");
+        }
+        bump();
 
         // 4. Voiceover
         mark("voiceover", "running");
@@ -188,15 +225,34 @@ const scriptRes = await postJSON("/api/generate/script", {
         // 7. Final render
         mark("render", "running");
         log("Assembling the final MP4 with JSON2Video…");
-        const renderRes = await postJSON("/api/generate/render", {
+
+        const renderPayload: any = {
           format: s.format,
-          clips: clipRes.clips ?? [],
-          images: s.mediaType === "videos" ? [] : images,
-          mediaType: s.mediaType,
           music: s.music,
           script,
           voice: s.voice,
-        });
+        };
+
+        if (mode === "stock_only") {
+          renderPayload.clips = footage;
+          renderPayload.images = [];
+          renderPayload.generationMode = "stock_only";
+        } else if (mode === "stock_plus_ai_images") {
+          // For now: use stock footage as clips, no AI images
+          renderPayload.clips = footage;
+          renderPayload.images = [];
+          renderPayload.generationMode = "stock_plus_ai_images";
+        } else if (mode === "ai_images_only") {
+          renderPayload.clips = [];
+          renderPayload.images = images;
+          renderPayload.generationMode = "ai_images_only";
+        } else { // ai_images_plus_ai_video
+          renderPayload.clips = clipRes.clips ?? [];
+          renderPayload.images = images;
+          renderPayload.generationMode = "ai_images_plus_ai_video";
+        }
+
+        const renderRes = await postJSON("/api/generate/render", renderPayload);
         if (cancelled) return;
 mark("render", "done");
 

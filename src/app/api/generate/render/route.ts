@@ -10,7 +10,8 @@ export async function POST(request: Request) {
     format = "9:16",
     clips = [],
     images = [],
-    mediaType = "both",
+    footage = [],
+    generationMode = "ai_images_plus_ai_video",
     music = "uplifting",
     script = "",
     voice = "21m00Tcm4TlvDq8ikWAM",
@@ -18,7 +19,8 @@ export async function POST(request: Request) {
     format?: string;
     clips?: unknown[];
     images?: string[];
-    mediaType?: "images" | "videos" | "both";
+    footage?: unknown[];
+    generationMode?: string;
     music?: string;
     script?: string;
     voice?: string;
@@ -26,26 +28,42 @@ export async function POST(request: Request) {
   const seed = uid("render");
   void music;
 
+  // Build scenes based on generationMode
+  let scenes: { elements: { type: string; src: string; duration?: number; resize?: string; zoom?: number }[] }[] = [];
+
+  if (generationMode === "stock_only" || generationMode === "stock_plus_ai_images") {
+    // Use stock footage (video) for all scenes
+    const footageList = footage as { url: string; poster?: string; duration?: number }[];
+    scenes = footageList.map((clip) => ({
+      elements: [{ type: "video", src: clip.url, duration: clip.duration ?? 5, resize: "cover" }],
+    }));
+  } else if (generationMode === "ai_images_only") {
+    // Use AI-generated images as stills
+    scenes = (images as string[]).map((img) => ({
+      elements: [{ type: "image", src: img, duration: 4, resize: "cover", zoom: 2 }],
+    }));
+  } else {
+    // ai_images_plus_ai_video: use clips first, then leftover images as stills
+    const clipList = clips as { url: string; poster?: string; duration?: number }[];
+    const leftoverImages = (images as string[]).slice(clipList.length);
+    scenes = [
+      ...clipList.map((clip) => ({
+        elements: [{ type: "video", src: clip.url, duration: clip.duration ?? 5, resize: "cover" }],
+      })),
+      ...leftoverImages.map((img) => ({
+        elements: [{ type: "image", src: img, duration: 4, resize: "cover", zoom: 2 }],
+      })),
+    ];
+  }
+
+  const cleanText = script
+    .replace(/\[[^\]]+\]/g, "")
+    .replace(/[#*_`>]/g, "")
+    .replace(/\n{2,}/g, " ")
+    .trim();
+
   if (hasRealKey(process.env.JSON2VIDEO_API_KEY)) {
     try {
-      const clipList = clips as { url: string; poster?: string; duration?: number }[];
-      const leftoverImages = mediaType === "videos" ? [] : (images as string[]).slice(clipList.length);
-
-      const scenes = [
-        ...clipList.map((clip) => ({
-          elements: [{ type: "video", src: clip.url, duration: clip.duration ?? 5, resize: "cover" }],
-        })),
-        ...leftoverImages.map((img) => ({
-          elements: [{ type: "image", src: img, duration: 4, resize: "cover", zoom: 2 }],
-        })),
-      ];
-
-      const cleanText = script
-        .replace(/\[[^\]]+\]/g, "")
-        .replace(/[#*_`>]/g, "")
-        .replace(/\n{2,}/g, " ")
-        .trim();
-
       const submitRes = await fetch("https://api.json2video.com/v2/movies", {
         method: "POST",
         headers: {

@@ -2,7 +2,7 @@
 
 export type VideoFormat = "9:16" | "16:9";
 export type VideoLength = "short" | "medium" | "long";
-export type MediaType = "images" | "videos" | "both";
+export type GenerationMode = "stock_only" | "stock_plus_ai_images" | "ai_images_only" | "ai_images_plus_ai_video";
 export type VideoStatus =
   | "draft"
   | "queued"
@@ -39,7 +39,7 @@ export interface VideoSettings {
   format: VideoFormat;
   length: VideoLength;
   tone: string;
-  mediaType: MediaType;
+  generationMode: GenerationMode;
   photoStyle: string;
   videoStyle: string;
   referenceImage?: string | null;

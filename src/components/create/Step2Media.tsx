@@ -95,7 +95,7 @@ export default function Step2Media({ selections, update, isFreeTier, userPlan }:
           <StyleGrid options={photoStyles} selected={selections.photoStyle || ''} onSelect={(v) => update('photoStyle', v)} />
         </div>
       )}
-      {(selections.generationMode === 'ai_images_plus_ai_video' || selections.generationMode === 'stock_only') && !isFreeTier && (
+      {(selections.generationMode === 'ai_images_plus_ai_video') && !isFreeTier && (
         <div>
           <label className="text-[13px] font-medium text-white mb-3 block">Video clip style</label>
           <StyleGrid options={videoStyles} selected={selections.videoStyle || ''} onSelect={(v) => update('videoStyle', v)} />

@@ -21,6 +21,15 @@ function parseScenes(text: string): string[] {
     const chunk = text.slice(start, end).trim();
     if (chunk) scenes.push(chunk.slice(0, 300));
   }
+  // Fallback: if no scene markers found, split into ~4 equal chunks
+  if (scenes.length === 0) {
+    const words = text.trim().split(/\s+/);
+    const chunkSize = Math.max(1, Math.ceil(words.length / 4));
+    for (let i = 0; i < words.length; i += chunkSize) {
+      const chunk = words.slice(i, i + chunkSize).join(" ");
+      if (chunk.trim()) scenes.push(chunk.slice(0, 300));
+    }
+  }
   return scenes;
 }
 
@@ -87,11 +96,11 @@ export default function GeneratePage() {
       updateVideo(video!.id, { status: "generating" });
       log("Generation started. You can safely navigate away — we'll keep working.", "info");
 
-      try {
+try {
         // 1. Script
         mark("script", "running");
         log("Writing the script with Claude…");
-const scriptRes = await postJSON("/api/generate/script", {
+        const scriptRes = await postJSON("/api/generate/script", {
           videoId: video!.id,
           topic: s.topic,
           tone: s.tone,
@@ -109,24 +118,30 @@ const scriptRes = await postJSON("/api/generate/script", {
         log(`Script ready (${scriptRes.source}).`, "success");
         bump();
 
-// 2. Images — the script step already kicked these off with fal.ai;
-        // reuse them, only falling back to a direct call if none came back.
-        mark("images", "running");
-        log("Generating scene images with Flux…");
-        let images: string[] = scriptRes.images ?? [];
-        if (!images.length) {
-          const imgRes = await postJSON("/api/generate/images", {
-            topic: s.topic,
-            style: s.photoStyle,
-            format: s.format,
-            count: s.length === "long" ? 8 : s.length === "medium" ? 5 : 3,
-          });
-          if (cancelled) return;
-          images = imgRes.images ?? [];
+        // 2. Images — only for modes that need AI-generated images
+        // stock_only uses only stock footage, so skip Flux entirely
+        let images: string[] = [];
+        if (s.generationMode !== "stock_only") {
+          mark("images", "running");
+          log("Generating scene images with Flux…");
+          images = scriptRes.images ?? [];
+          if (!images.length) {
+            const imgRes = await postJSON("/api/generate/images", {
+              topic: s.topic,
+              style: s.photoStyle,
+              format: s.format,
+              count: s.length === "long" ? 8 : s.length === "medium" ? 5 : 3,
+            });
+            if (cancelled) return;
+            images = imgRes.images ?? [];
+          }
+          if (images[0]) updateVideo(video!.id, { thumbnail_url: images[0] });
+          mark("images", "done");
+          log(`${images.length} images generated.`, "success");
+        } else {
+          // stock_only: no AI images needed, thumbnail will come from stock footage
+          log("Skipping AI image generation — stock_only mode uses stock footage only.");
         }
-        if (images[0]) updateVideo(video!.id, { thumbnail_url: images[0] });
-        mark("images", "done");
-        log(`${images.length} images generated.`, "success");
         bump();
 
         // 3. Footage/Video — behavior depends on generationMode

@@ -12,7 +12,7 @@ export interface SearchStockFootageInput {
   topic?: string;
 }
 
-function extractKeywords(text: string): string[] {
+function extractKeywords(text: string, topic?: string): string[] {
   const words = text
     .toLowerCase()
     .replace(/[^\w\s]/g, " ")
@@ -40,7 +40,12 @@ function extractKeywords(text: string): string[] {
           "which",
         ].includes(w)
     );
-  return words.slice(0, 4);
+  const keywords = words.slice(0, 4);
+  // If no keywords extracted, fall back to topic or generic terms
+  if (keywords.length === 0 && topic) {
+    return topic.toLowerCase().split(/\s+/).filter((w) => w.length > 2).slice(0, 4);
+  }
+  return keywords.length > 0 ? keywords : ["abstract", "concept", "visual", "scene"];
 }
 
 export async function searchStockFootage(
@@ -49,6 +54,15 @@ export async function searchStockFootage(
   topic?: string
 ): Promise<{ footage: StockFootageClip[]; source: "pexels" | "mock" }> {
   const seed = uid("footage");
+
+  // If no scene texts, fall back to mock immediately
+  if (!sceneTexts || sceneTexts.length === 0) {
+    await new Promise((r) => setTimeout(r, 300));
+    return {
+      footage: mockStockFootage(seed, 3, type),
+      source: "mock",
+    };
+  }
 
   if (hasRealKey(process.env.PEXELS_API_KEY)) {
     try {
@@ -144,13 +158,15 @@ function mockStockFootage(
   count: number,
   type: "video" | "photo"
 ): StockFootageClip[] {
+  const durations = [4, 5, 6, 7, 8];
   return Array.from({ length: count }, (_, i) => {
     const s = `${seed}-${i}`;
+    const duration = durations[i % durations.length];
     return type === "video"
       ? {
           url: `https://v3.fal.media/files/mock/${s}.mp4`,
           poster: placeholderImage(s, 720, 1280),
-          duration: 5,
+          duration,
         }
       : {
           url: placeholderImage(s, 1080, 1920),

@@ -23,11 +23,37 @@ export default function CreateVideoPage() {
   const [limitError, setLimitError] = useState<string | null>(null);
   const [selections, setSelections] = useState<Record<string, any>>({ scriptMode: 'ai', lengthCredits: 0, language: 'English' });
   const router = useRouter();
-  const { addVideo, profile, updateProfile } = useApp();
+  const { addVideo, profile, updateProfile, ready } = useApp();
 
   const update = (key: string, value: any) => setSelections((prev) => ({ ...prev, [key]: value }));
 
   const credits = useMemo(() => creditsForSettings(selections as any), [selections]);
+
+  // Don't render steps until profile is loaded (prevents free-tier lock bypass during auth)
+  if (!ready || !profile) {
+    return (
+      <div className="relative min-h-screen bg-black flex">
+        <div className="fixed inset-0 z-0 pointer-events-none">
+          <AmbientField variant="mixed" />
+        </div>
+        <div className="relative z-10 flex w-full">
+          <div className="flex-1 min-w-0 flex flex-col">
+            <Topbar />
+            <main className="flex-1 px-6 lg:px-8 py-8">
+              <div className="flex items-center justify-center h-[60vh]">
+                <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} className="text-center">
+                  <div className="h-12 w-12 border-4 border-fuchsia-500/30 border-t-fuchsia-500 rounded-full animate-spin mb-4 mx-auto" />
+                  <p className="text-[14px] text-[#a8aeb8]">Loading your account…</p>
+                </motion.div>
+              </div>
+            </main>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  const isFreeTier = profile.plan === 'free';
 
 const stepValid = useMemo(() => {
     if (step === 1) return selections.topic && selections.format && selections.length && selections.tone;
@@ -152,8 +178,8 @@ const stepValid = useMemo(() => {
                   <div className="mb-8"><StepIndicator current={step} onStepClick={setStep} /></div>
                   <div className="max-w-2xl">
                     <AnimatePresence mode="wait">
-                      {step === 1 && <Step1Script key="s1" selections={selections} update={update} isFreeTier={profile?.plan === 'free'} />}
-                      {step === 2 && <Step2Media key="s2" selections={selections} update={update} isFreeTier={profile?.plan === 'free'} userPlan={profile?.plan ?? 'free'} />}
+                      {step === 1 && <Step1Script key="s1" selections={selections} update={update} isFreeTier={isFreeTier} />}
+                      {step === 2 && <Step2Media key="s2" selections={selections} update={update} isFreeTier={isFreeTier} userPlan={profile?.plan ?? 'free'} />}
                       {step === 3 && <Step3Voice key="s3" selections={selections} update={update} />}
                       {step === 4 && <Step4Review key="s4" selections={selections} credits={credits} />}
                     </AnimatePresence>

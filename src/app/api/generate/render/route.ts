@@ -38,6 +38,31 @@ export async function POST(request: Request) {
     return Response.json({ error: enforcement.reason }, { status: enforcement.reason === "Unauthorized" ? 401 : 403 });
   }
 
+  // Validate required assets for each generation mode BEFORE calling JSON2Video
+  const footageList = footage as { url: string; poster?: string; duration?: number }[];
+  const imagesList = images as string[];
+  const clipsList = clips as { url: string; poster?: string; duration?: number }[];
+
+  let missingAssetError: string | null = null;
+  if (generationMode === "stock_only" || generationMode === "stock_plus_ai_images") {
+    if (!footageList || footageList.length === 0) {
+      missingAssetError = `No stock footage provided for generation mode "${generationMode}". Stock footage retrieval likely returned zero results.`;
+    }
+  } else if (generationMode === "ai_images_only") {
+    if (!imagesList || imagesList.length === 0) {
+      missingAssetError = `No AI images provided for generation mode "ai_images_only". Image generation likely failed.`;
+    }
+  } else if (generationMode === "ai_images_plus_ai_video") {
+    if ((!clipsList || clipsList.length === 0) && (!imagesList || imagesList.length === 0)) {
+      missingAssetError = `No AI clips or images provided for generation mode "ai_images_plus_ai_video". Both clip and image generation failed.`;
+    }
+  }
+
+  if (missingAssetError) {
+    console.error(`Render validation failed: ${missingAssetError}`);
+    return Response.json({ error: missingAssetError, source: "validation" }, { status: 400 });
+  }
+
   // Build scenes based on generationMode
   let scenes: { elements: { type: string; src: string; duration?: number; resize?: string; zoom?: number }[] }[] = [];
 
@@ -151,10 +176,8 @@ export async function POST(request: Request) {
     console.error("JSON2VIDEO_API_KEY missing or invalid — using mock render.");
   }
 
-  await new Promise((r) => setTimeout(r, 1100));
-  // Increment free tier counter for successful mock renders too
-  if (enforcement.userId && enforcement.plan === "free") {
-    incrementFreeTierCount(enforcement.userId).catch(console.error);
-  }
-  return Response.json({ ...mockRender(seed, format), source: "mock" });
+  // If we reach here, real render failed — return error instead of mock
+  const errorMsg = "JSON2Video render failed or timed out. No valid video URL returned.";
+  console.error(errorMsg);
+  return Response.json({ error: errorMsg, source: "failed" }, { status: 500 });
 }

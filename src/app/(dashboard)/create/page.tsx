@@ -29,6 +29,26 @@ export default function CreateVideoPage() {
 
   const credits = useMemo(() => creditsForSettings(selections as any), [selections]);
 
+  const isFreeTier = profile?.plan === 'free';
+
+  const stepValid = useMemo(() => {
+    if (step === 1) return selections.topic && selections.format && selections.length && selections.tone;
+    if (step === 2) {
+      if (!selections.generationMode) return false;
+      const mode = selections.generationMode;
+      if (mode !== 'stock_only' && !selections.photoStyle) return false;
+      if (mode === 'ai_images_plus_ai_video' && !selections.videoStyle) return false;
+      return true;
+    }
+    if (step === 3) return selections.voice && selections.language && selections.speed && selections.captionStyle;
+    return true;
+  }, [step, selections]);
+
+  const canGenerate = useMemo(() => {
+    return selections.topic && selections.format && selections.length && selections.tone &&
+      selections.generationMode && selections.voice && selections.language && selections.speed && selections.captionStyle;
+  }, [selections]);
+
   // Don't render steps until profile is loaded (prevents free-tier lock bypass during auth)
   if (!ready || !profile) {
     return (
@@ -43,7 +63,7 @@ export default function CreateVideoPage() {
               <div className="flex items-center justify-center h-[60vh]">
                 <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} className="text-center">
                   <div className="h-12 w-12 border-4 border-fuchsia-500/30 border-t-fuchsia-500 rounded-full animate-spin mb-4 mx-auto" />
-                  <p className="text-[14px] text-[#a8aeb8]">Loading your account…</p>
+                  <p className="text-[14px] text-[#a8aeb8]">Loading your account&hellip;</p>
                 </motion.div>
               </div>
             </main>
@@ -52,25 +72,6 @@ export default function CreateVideoPage() {
       </div>
     );
   }
-
-  const isFreeTier = profile.plan === 'free';
-
-const stepValid = useMemo(() => {
-    if (step === 1) return selections.topic && selections.format && selections.length && selections.tone;
-    if (step === 2) {
-      if (!selections.generationMode) return false;
-      if ((selections.generationMode === 'ai_images_only' || selections.generationMode === 'ai_images_plus_ai_video' || selections.generationMode === 'stock_plus_ai_images') && !selections.photoStyle) return false;
-      if ((selections.generationMode === 'ai_images_plus_ai_video' || selections.generationMode === 'stock_only') && !selections.videoStyle) return false;
-      return true;
-    }
-    if (step === 3) return selections.voice && selections.language && selections.speed && selections.captionStyle;
-    return true;
-  }, [step, selections]);
-
-  const canGenerate = useMemo(() => {
-    return selections.topic && selections.format && selections.length && selections.tone &&
-      selections.generationMode && selections.voice && selections.language && selections.speed && selections.captionStyle;
-  }, [selections]);
 
   const handleGenerate = () => {
     if (!canGenerate) return;

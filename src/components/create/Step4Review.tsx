@@ -1,6 +1,6 @@
 ﻿'use client';
 import { motion } from 'framer-motion';
-import { Film, Clock, Type, Image, Mic, Monitor, Smartphone, Sparkles, Check } from 'lucide-react';
+import { Film, Clock, Type, Image, Mic, Monitor, Smartphone, Sparkles, Check, Layers, Cpu } from 'lucide-react';
 
 function ReviewCard({ icon: Icon, label, value, delay }: { icon: any; label: string; value: string; delay: number }) {
   return (
@@ -34,7 +34,7 @@ export default function Step4Review({ selections, credits }: { selections: Recor
         <ReviewCard icon={formatIcon} label="Format" value={selections.format} delay={0.1} />
         <ReviewCard icon={Clock} label="Length" value={selections.length} delay={0.15} />
         <ReviewCard icon={Type} label="Tone" value={selections.tone} delay={0.2} />
-        <ReviewCard icon={Image} label="Media type" value={selections.mediaType} delay={0.25} />
+        <ReviewCard icon={Film} label="Generation mode" value={selections.generationMode} delay={0.25} />
         <ReviewCard icon={Image} label="Photo style" value={selections.photoStyle} delay={0.3} />
         <ReviewCard icon={Film} label="Video style" value={selections.videoStyle} delay={0.35} />
         <ReviewCard icon={Mic} label="Voice" value={selections.voice} delay={0.4} />

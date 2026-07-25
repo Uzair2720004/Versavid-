@@ -1,7 +1,6 @@
 ﻿// Static catalog data used across the wizard, settings, pricing, etc.
 
 export const APP_NAME = "VersaVid";
-export const FREE_CREDITS = 5;
 
 export const STATS_BAR = [
   { value: "5 min", label: "Average build time" },
@@ -9,6 +8,29 @@ export const STATS_BAR = [
   { value: "6", label: "Languages supported" },
   { value: "5", label: "Free credits on signup" },
 ];
+
+// ---- Credit cost lookup table (single source of truth) ----
+// Format: [length][generationMode] = credits
+export const CREDIT_COSTS: Record<string, Record<string, number>> = {
+  short: {
+    stock_only: 1,
+    stock_plus_ai_images: 2,
+    ai_images_only: 2,
+    ai_images_plus_ai_video: 6,
+  },
+  medium: {
+    stock_only: 2,
+    stock_plus_ai_images: 4,
+    ai_images_only: 5,
+    ai_images_plus_ai_video: 15,
+  },
+  long: {
+    stock_only: 4,
+    stock_plus_ai_images: 8,
+    ai_images_only: 10,
+    ai_images_plus_ai_video: 35,
+  },
+};
 
 // ---- Wizard option catalogs ------------------------------------------------
 
@@ -18,9 +40,9 @@ export const FORMATS = [
 ] as const;
 
 export const LENGTHS = [
-  { value: "short", label: "Short", sub: "15â€“30s", credits: 3 },
-  { value: "medium", label: "Medium", sub: "30â€“60s", credits: 5 },
-  { value: "long", label: "Long", sub: "1â€“3 min", credits: 9 },
+  { value: "short", label: "Short", sub: "15–30s" },
+  { value: "medium", label: "Medium", sub: "30–60s" },
+  { value: "long", label: "Long", sub: "1–3 min" },
 ] as const;
 
 export const TONES = [
@@ -33,12 +55,6 @@ export const TONES = [
   "Professional",
   "Storytelling",
 ];
-
-export const MEDIA_TYPES = [
-  { value: "images", label: "Images only", sub: "AI photos with motion", icon: "image" },
-  { value: "videos", label: "Videos only", sub: "AI generated clips", icon: "film" },
-  { value: "both", label: "Mixed media", sub: "Photos + video clips", icon: "layers" },
-] as const;
 
 export const PHOTO_STYLES = [
   { value: "photoreal", label: "Photorealistic", swatch: "#7f77dd" },
@@ -167,16 +183,20 @@ export const FEATURES = [
 
 // ---- Billing ---------------------------------------------------------------
 
+export type GenerationMode = "stock_only" | "stock_plus_ai_images" | "ai_images_only" | "ai_images_plus_ai_video";
+
 export interface Plan {
   id: string;
   name: string;
   price: number;
   period: string;
-  credits: string;
+  monthlyCredits: number;
+  creditsLabel: string;
   blurb: string;
   features: string[];
   highlighted?: boolean;
   cta: string;
+  allowedModes: GenerationMode[];
 }
 
 export const PLANS: Plan[] = [
@@ -184,59 +204,90 @@ export const PLANS: Plan[] = [
     id: "free",
     name: "Free",
     price: 0,
-    period: "forever",
-    credits: "15 credits once",
-    blurb: "Kick the tires and ship your first video.",
-    features: ["15 starter credits", "720p exports", "Watermark", "5 AI voices", "Community support"],
-    cta: "Start free",
+    period: "/month",
+    monthlyCredits: 3,
+    creditsLabel: "3 videos/month",
+    blurb: "Try VersaVid with stock footage videos.",
+    features: [
+      "3 stock videos per month",
+      "Stock footage only (stock_only mode)",
+      "AI script generation",
+      "Auto captions",
+      "720p exports",
+      "Watermarked",
+      "Community support",
+    ],
+    cta: "Start Free",
+    allowedModes: ["stock_only"],
   },
   {
     id: "creator",
     name: "Creator",
     price: 19,
-    period: "/mo",
-    credits: "40 credits / mo",
+    period: "/month",
+    monthlyCredits: 80,
+    creditsLabel: "80 credits/month",
     blurb: "For creators publishing weekly.",
-    features: ["40 credits / month", "1080p exports", "No watermark", "All 8 voices", "Priority queue"],
+    features: [
+      "80 credits/month",
+      "Stock + AI images (stock_plus_ai_images)",
+      "AI images only (ai_images_only)",
+      "AI script generation",
+      "Auto captions + custom styles",
+      "1080p exports",
+      "No watermark",
+      "All 8 voices",
+      "Priority queue",
+    ],
     highlighted: true,
     cta: "Choose Creator",
+    allowedModes: ["stock_only", "stock_plus_ai_images", "ai_images_only"],
   },
   {
     id: "pro",
     name: "Pro",
     price: 39,
-    period: "/mo",
-    credits: "90 credits / mo",
+    period: "/month",
+    monthlyCredits: 100,
+    creditsLabel: "100 credits/month",
     blurb: "For daily uploaders and small teams.",
-    features: ["90 credits / month", "4K exports", "Voice cloning", "Brand kits", "Analytics"],
+    features: [
+      "100 credits/month",
+      "All generation modes (including AI video)",
+      "AI script generation",
+      "Auto captions + custom styles",
+      "4K exports",
+      "No watermark",
+      "All 8 voices + voice cloning",
+      "Brand kits",
+      "Analytics",
+      "Priority queue",
+    ],
     cta: "Choose Pro",
+    allowedModes: ["stock_only", "stock_plus_ai_images", "ai_images_only", "ai_images_plus_ai_video"],
   },
   {
     id: "agency",
     name: "Agency",
     price: 99,
-    period: "/mo",
-    credits: "240 credits / mo",
+    period: "/month",
+    monthlyCredits: 250,
+    creditsLabel: "250 credits/month",
     blurb: "For agencies managing many channels.",
-    features: ["240 credits / month", "4K exports", "5 team seats", "API access", "Dedicated support"],
-    cta: "Choose Agency",
+    features: [
+      "250 credits/month",
+      "All generation modes",
+      "AI script generation",
+      "Auto captions + custom styles",
+      "4K exports",
+      "No watermark",
+      "5 team seats",
+      "API access",
+      "Dedicated support",
+    ],
+cta: "Choose Agency",
+    allowedModes: ["stock_only", "stock_plus_ai_images", "ai_images_only", "ai_images_plus_ai_video"],
   },
-];
-
-export interface CreditPack {
-  id: string;
-  name: string;
-  price: number;
-  credits: number;
-  perks: string;
-  popular?: boolean;
-}
-
-export const CREDIT_PACKS: CreditPack[] = [
-  { id: "starter", name: "Starter", price: 9, credits: 30, perks: "~6 short videos" },
-  { id: "creator", name: "Creator", price: 25, credits: 100, perks: "~20 short videos", popular: true },
-  { id: "pro", name: "Pro", price: 59, credits: 280, perks: "~56 short videos" },
-  { id: "studio", name: "Studio", price: 129, credits: 700, perks: "~140 short videos" },
 ];
 
 export const SETTINGS_SECTIONS = [

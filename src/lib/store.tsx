@@ -11,8 +11,10 @@ import {
 } from "react";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { createClient } from "./supabase/client";
-import { FREE_CREDITS } from "./constants";
 import { uid, placeholderImage } from "./utils";
+
+const LOCAL_FREE_CREDITS = 15;
+
 import type {
   Profile,
   Credits,
@@ -77,7 +79,7 @@ function defaultCredits(userId: string): Credits {
   return {
     id: uid("cr"),
     user_id: userId,
-    balance: FREE_CREDITS,
+    balance: LOCAL_FREE_CREDITS,
     total_purchased: 0,
     total_used: 0,
     monthly_allowance: 120,
@@ -143,11 +145,11 @@ function seedTransactions(userId: string): Transaction[] {
       id: uid("txn"),
       user_id: userId,
       amount: 0,
-      credits: FREE_CREDITS,
+      credits: LOCAL_FREE_CREDITS,
       type: "bonus",
       status: "completed",
       payment_id: null,
-      description: "Welcome bonus — 5 free credits",
+      description: "Welcome bonus — 15 free credits",
       created_at: new Date(now - 72 * 3600_000).toISOString(),
     },
     {
@@ -178,7 +180,7 @@ function seedTransactions(userId: string): Transaction[] {
 function freshState(profile: Profile): PersistedState {
   const credits = defaultCredits(profile.id);
   // reflect the seeded usage/purchase in the balance so dashboards add up
-  credits.balance = FREE_CREDITS + 100 - 5;
+  credits.balance = LOCAL_FREE_CREDITS + 100 - 5;
   credits.total_purchased = 100;
   credits.total_used = 5;
   return {
@@ -309,6 +311,7 @@ return {
           created_at: user.created_at ?? new Date().toISOString(),
           plan: "free",
           monthly_video_count: 0,
+          period_start: new Date().toISOString(),
           signup_ip: null,
         };
       }
@@ -323,6 +326,7 @@ const profile: Profile = {
         created_at: new Date().toISOString(),
         plan: "free",
         monthly_video_count: 0,
+        period_start: new Date().toISOString(),
         signup_ip: null,
       };
       setState(freshState(profile));
@@ -350,6 +354,7 @@ return {
           created_at: data.user.created_at ?? new Date().toISOString(),
           plan: "free",
           monthly_video_count: 0,
+          period_start: new Date().toISOString(),
           signup_ip: null,
         };
       }
@@ -370,6 +375,7 @@ const profile: Profile = {
         created_at: new Date().toISOString(),
         plan: "free",
         monthly_video_count: 0,
+        period_start: new Date().toISOString(),
         signup_ip: null,
       };
       setState(freshState(profile));
@@ -399,6 +405,7 @@ const profile: Profile = {
       created_at: new Date().toISOString(),
       plan: "free",
       monthly_video_count: 0,
+      period_start: new Date().toISOString(),
       signup_ip: null,
     };
     setState(freshState(profile));

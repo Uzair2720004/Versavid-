@@ -50,7 +50,7 @@ export function SummaryCard({
           <Row label="Tone" value={settings.tone} />
         </div>
         <div className="py-1">
-          <Row label="Media" value={settings.mediaType} />
+          <Row label="Generation mode" value={settings.generationMode} />
           <Row label="Photo style" value={settings.photoStyle} />
           <Row label="Clip style" value={settings.videoStyle} />
         </div>

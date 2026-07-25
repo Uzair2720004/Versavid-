@@ -2,6 +2,8 @@ import { hasRealKey } from "@/lib/utils";
 import { mockScript } from "@/lib/ai/mock";
 import { generateImages } from "@/lib/ai/generate";
 import { createAdminSupabase } from "@/lib/supabase/server";
+import { createServerSupabase } from "@/lib/supabase/server";
+import { validateGenerationRequest } from "@/lib/plan-enforcement";
 
 export const runtime = "nodejs";
 
@@ -97,6 +99,7 @@ function parseScenes(text: string): string[] {
   }
   return scenes;
 }
+
 export async function POST(request: Request) {
   const body = await request.json().catch(() => ({}));
   const {
@@ -110,6 +113,12 @@ export async function POST(request: Request) {
     customScript = "",
     language = "English",
   } = body as Record<string, string>;
+
+  // Server-side plan enforcement
+  const enforcement = await validateGenerationRequest(videoId);
+  if (!enforcement.allowed) {
+    return Response.json({ error: enforcement.reason }, { status: enforcement.reason === "Unauthorized" ? 401 : 403 });
+  }
 
   // 1. Produce the script — user-supplied or generated.
   let script: string;
@@ -133,16 +142,16 @@ export async function POST(request: Request) {
     if (error) console.error("script route: failed to save script:", error.message);
   }
 
-// 3. Move to image generation with fal.ai — one image per actual scene in the script.
-const scenePrompts = parseScenes(script);
-const fallbackCount = length === "long" ? 8 : length === "medium" ? 5 : 3;
-const { images, source: imagesSource } = await generateImages({
-  topic,
-  style: photoStyle,
-  format,
-  count: fallbackCount,
-  prompts: scenePrompts.length ? scenePrompts : undefined,
-});
+  // 3. Move to image generation with fal.ai — one image per actual scene in the script.
+  const scenePrompts = parseScenes(script);
+  const fallbackCount = length === "long" ? 8 : length === "medium" ? 5 : 3;
+  const { images, source: imagesSource } = await generateImages({
+    topic,
+    style: photoStyle,
+    format,
+    count: fallbackCount,
+    prompts: scenePrompts.length ? scenePrompts : undefined,
+  });
 
   // Persist the first scene image as the thumbnail.
   if (supabase && images[0]) {

@@ -1,4 +1,4 @@
-import { LENGTHS } from "./constants";
+import { CREDIT_COSTS } from "./constants";
 import type { VideoLength, GenerationMode, VideoSettings } from "./types";
 
 /** Tiny classnames joiner. */
@@ -14,22 +14,18 @@ export function uid(prefix = "id"): string {
   return `${prefix}_${Math.random().toString(36).slice(2)}${Date.now().toString(36)}`;
 }
 
-/** Credits required for a video, derived from length + media choices. */
+/** Credits required for a video, derived from length + generationMode. */
 export function creditsForSettings(settings: Partial<VideoSettings>): number {
-  const base = LENGTHS.find((l) => l.value === settings.length)?.credits ?? 3;
+  const length = settings.length as VideoLength;
+  const mode = settings.generationMode as GenerationMode;
+  const base = CREDIT_COSTS?.[length]?.[mode] ?? 3;
   let total = base;
-  if (settings.generationMode === "ai_images_plus_ai_video") total += 2;
-  if (settings.generationMode === "stock_only" || settings.generationMode === "stock_plus_ai_images") total += 1;
   if (settings.music && settings.music !== "none") total += 1;
   return total;
 }
 
 export function creditsForLength(length: VideoLength, mode: GenerationMode): number {
-  const base = LENGTHS.find((l) => l.value === length)?.credits ?? 3;
-  let extra = 0;
-  if (mode === "ai_images_plus_ai_video") extra = 2;
-  else if (mode === "stock_only" || mode === "stock_plus_ai_images") extra = 1;
-  return base + extra;
+  return CREDIT_COSTS?.[length]?.[mode] ?? 3;
 }
 
 export function formatDate(iso: string): string {

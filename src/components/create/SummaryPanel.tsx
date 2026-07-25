@@ -41,7 +41,7 @@ export default function SummaryPanel({ selections, credits, onGenerate, canGener
           <SummaryRow icon={formatIcon} label="Format" value={selections.format ? (selections.format === 'vertical' ? 'Vertical 9:16' : 'Horizontal 16:9') : '-'} />
           <SummaryRow icon={Clock} label="Length" value={selections.length || '-'} />
           <SummaryRow icon={Type} label="Tone" value={selections.tone || '-'} />
-          <SummaryRow icon={Image} label="Media type" value={selections.mediaType || '-'} />
+          <SummaryRow icon={Film} label="Generation mode" value={selections.generationMode || '-'} />
           <SummaryRow icon={Image} label="Photo style" value={selections.photoStyle || '-'} />
           <SummaryRow icon={Film} label="Video style" value={selections.videoStyle || '-'} />
           <SummaryRow icon={Mic} label="Voice" value={selections.voice || '-'} />

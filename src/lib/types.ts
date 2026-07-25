@@ -23,6 +23,7 @@ export interface Profile {
   created_at: string;
   plan: 'free' | 'creator' | 'pro' | 'agency';
   monthly_video_count: number;
+  period_start: string;
   signup_ip?: string | null;
 }
 
@@ -43,7 +44,6 @@ export interface VideoSettings {
   length: VideoLength;
   tone: string;
   generationMode: GenerationMode;
-  mediaType: "images" | "videos" | "mixed";
   photoStyle: string;
   videoStyle: string;
   referenceImage?: string | null;

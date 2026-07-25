@@ -10,7 +10,8 @@ import { Icon } from "@/components/ui/Icon";
 import { AuthDemo } from "./AuthDemo";
 import { useApp } from "@/lib/store";
 import { passwordStrength } from "@/lib/utils";
-import { FREE_CREDITS } from "@/lib/constants";
+
+const SIGNUP_BONUS_CREDITS = 15;
 
 export function AuthScreen({ mode }: { mode: "login" | "signup" }) {
   const router = useRouter();
@@ -79,7 +80,7 @@ export function AuthScreen({ mode }: { mode: "login" | "signup" }) {
             {isSignup && (
               <div className="mb-6 inline-flex items-center gap-2 rounded-full border border-accent/30 bg-accent/10 px-3.5 py-1.5 text-sm font-medium text-accent-soft">
                 <Icon name="gift" size={15} />
-                {FREE_CREDITS} free credits on signup
+                3 free videos every month
               </div>
             )}
 

@@ -1,6 +1,8 @@
 import { hasRealKey } from "@/lib/utils";
 import { mockClips } from "@/lib/ai/mock";
 import { uid } from "@/lib/utils";
+import { createServerSupabase } from "@/lib/supabase/server";
+import { validateGenerationRequest } from "@/lib/plan-enforcement";
 
 export const runtime = "nodejs";
 export const maxDuration = 300; // allow up to 5 minutes on this route
@@ -13,13 +15,20 @@ export const maxDuration = 300; // allow up to 5 minutes on this route
  */
 export async function POST(request: Request) {
   const body = await request.json().catch(() => ({}));
-  const { images = [], style = "realistic", generationMode = "ai_images_plus_ai_video" } = body as {
+  const { images = [], style = "realistic", generationMode = "ai_images_plus_ai_video", videoId = "" } = body as {
     images?: string[];
     style?: string;
     generationMode?: string;
+    videoId?: string;
   };
   const seed = uid("clip");
-  
+
+  // Server-side plan enforcement
+  const enforcement = await validateGenerationRequest(videoId);
+  if (!enforcement.allowed) {
+    return Response.json({ error: enforcement.reason }, { status: enforcement.reason === "Unauthorized" ? 401 : 403 });
+  }
+
   // Only ai_images_plus_ai_video mode actually generates video clips
   // stock_only and stock_plus_ai_images use stock footage instead
   // ai_images_only doesn't call this endpoint at all

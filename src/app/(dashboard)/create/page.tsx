@@ -14,7 +14,7 @@ import { useRouter } from 'next/navigation';
 import { useApp } from '@/lib/store';
 import { uid, creditsForSettings } from '@/lib/utils';
 
-const FREE_TIER_MONTHLY_LIMIT = 5;
+const FREE_TIER_MONTHLY_LIMIT = 3;
 
 export default function CreateVideoPage() {
   const [step, setStep] = useState(1);
@@ -29,13 +29,12 @@ export default function CreateVideoPage() {
 
   const credits = useMemo(() => creditsForSettings(selections as any), [selections]);
 
-  const stepValid = useMemo(() => {
+const stepValid = useMemo(() => {
     if (step === 1) return selections.topic && selections.format && selections.length && selections.tone;
     if (step === 2) {
-      if (!selections.mediaType) return false;
-      if (selections.mediaType === 'images' && !selections.photoStyle) return false;
-      if (selections.mediaType === 'videos' && !selections.videoStyle) return false;
-      if (selections.mediaType === 'mixed' && (!selections.photoStyle || !selections.videoStyle)) return false;
+      if (!selections.generationMode) return false;
+      if ((selections.generationMode === 'ai_images_only' || selections.generationMode === 'ai_images_plus_ai_video' || selections.generationMode === 'stock_plus_ai_images') && !selections.photoStyle) return false;
+      if ((selections.generationMode === 'ai_images_plus_ai_video' || selections.generationMode === 'stock_only') && !selections.videoStyle) return false;
       return true;
     }
     if (step === 3) return selections.voice && selections.language && selections.speed && selections.captionStyle;
@@ -44,7 +43,7 @@ export default function CreateVideoPage() {
 
   const canGenerate = useMemo(() => {
     return selections.topic && selections.format && selections.length && selections.tone &&
-      selections.mediaType && selections.voice && selections.language && selections.speed && selections.captionStyle;
+      selections.generationMode && selections.voice && selections.language && selections.speed && selections.captionStyle;
   }, [selections]);
 
   const handleGenerate = () => {
@@ -52,8 +51,23 @@ export default function CreateVideoPage() {
 
     const plan = profile?.plan ?? 'free';
     const monthlyCount = profile?.monthly_video_count ?? 0;
+    const periodStart = profile?.period_start ? new Date(profile.period_start) : null;
+    const now = new Date();
 
-    if (plan === 'free' && monthlyCount >= FREE_TIER_MONTHLY_LIMIT) {
+    // Reset monthly counter if period_start is more than 30 days ago
+    if (plan === 'free' && periodStart) {
+      const daysSincePeriodStart = (now.getTime() - periodStart.getTime()) / (1000 * 60 * 60 * 24);
+      if (daysSincePeriodStart >= 30) {
+        updateProfile({ monthly_video_count: 0, period_start: now.toISOString() });
+        // After reset, monthlyCount will be 0 in the next check
+        if (0 >= FREE_TIER_MONTHLY_LIMIT) return; // This won't happen since limit is 3
+      }
+    }
+
+    // Use updated monthly count after potential reset
+    const effectiveMonthlyCount = (plan === 'free' && periodStart && (now.getTime() - periodStart.getTime()) / (1000 * 60 * 60 * 24) >= 30) ? 0 : monthlyCount;
+
+    if (plan === 'free' && effectiveMonthlyCount >= FREE_TIER_MONTHLY_LIMIT) {
       setLimitError(`Free plan limit reached: ${FREE_TIER_MONTHLY_LIMIT} videos per month. Upgrade to continue.`);
       return;
     }
@@ -77,10 +91,6 @@ export default function CreateVideoPage() {
       settings: selections as any,
       created_at: new Date().toISOString(),
     });
-
-    if (plan === 'free') {
-      updateProfile({ monthly_video_count: monthlyCount + 1 });
-    }
 
     router.push(`/generate/${id}`);
   };
@@ -143,7 +153,7 @@ export default function CreateVideoPage() {
                   <div className="max-w-2xl">
                     <AnimatePresence mode="wait">
                       {step === 1 && <Step1Script key="s1" selections={selections} update={update} isFreeTier={profile?.plan === 'free'} />}
-                      {step === 2 && <Step2Media key="s2" selections={selections} update={update} isFreeTier={profile?.plan === 'free'} />}
+                      {step === 2 && <Step2Media key="s2" selections={selections} update={update} isFreeTier={profile?.plan === 'free'} userPlan={profile?.plan ?? 'free'} />}
                       {step === 3 && <Step3Voice key="s3" selections={selections} update={update} />}
                       {step === 4 && <Step4Review key="s4" selections={selections} credits={credits} />}
                     </AnimatePresence>

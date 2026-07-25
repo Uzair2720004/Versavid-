@@ -4,11 +4,11 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { Plus, Minus } from 'lucide-react';
 
 const faqs = [
-  { q: 'What is a generation credit?', a: 'One credit equals one AI-generated video. Credits are consumed when you generate a new video. Free plan credits are one-time; paid plan credits refresh monthly.' },
-  { q: 'Can I buy extra credits?', a: 'Yes. Credit packs are one-time purchases that never expire. Buy them whenever you need a boost on top of your monthly plan credits.' },
+  { q: 'What is a generation credit?', a: 'One credit equals one AI-generated video. Credits are consumed when you generate a new video. Free plan gives 3 free videos per month; paid plan credits refresh monthly.' },
+  { q: 'Can I buy extra credits?', a: 'Extra credits are not currently available for separate purchase. Upgrade your plan for higher monthly allowances.' },
   { q: 'Can I upgrade or downgrade anytime?', a: 'Absolutely. Changes take effect immediately and we prorate the difference. Downgrades apply at the end of your current billing cycle.' },
-  { q: 'Is there a free plan?', a: 'Yes. The Free plan includes 15 one-time credits — no credit card required. It is perfect for trying Versavid and creating your first videos.' },
-  { q: 'Do unused credits roll over?', a: 'On paid plans, unused monthly credits roll over for 60 days. One-time credit pack purchases never expire.' },
+  { q: 'Is there a free plan?', a: 'Yes. The Free plan includes 3 free videos per month — no credit card required. It is perfect for trying VersaVid and creating your first videos.' },
+  { q: 'Do unused credits roll over?', a: 'On paid plans, unused monthly credits do not roll over and reset at the start of each billing period. The Free plan gives 3 new videos each month.' },
 ];
 
 export default function PricingFAQ() {

@@ -1,21 +1,25 @@
 ﻿'use client';
 import { motion } from 'framer-motion';
 import { Check, Minus } from 'lucide-react';
+import { PLANS } from '@/lib/constants';
 
-const plans = ['Free', 'Creator', 'Pro', 'Agency'];
+const plans = PLANS.map((p) => p.name);
+const planIds = PLANS.map((p) => p.id);
+const allowedModesMap = Object.fromEntries(PLANS.map((p) => [p.id, p.allowedModes]));
+
 const comparison = [
   { category: 'AI Generation', features: [
-    { name: 'AI script generation', values: [true, true, true, true] },
-    { name: 'AI images & video clips', values: [true, true, true, true] },
-    { name: 'AI voiceover', values: [true, true, true, true] },
-    { name: 'Auto captions', values: [true, true, true, true] },
-    { name: 'Shorts & Standard support', values: [true, true, true, true] },
-    { name: 'Monthly credits', values: ['15 (once)', '40', '90', '240'] },
-    { name: 'Custom caption styles', values: [false, false, true, true] },
+    { name: 'AI script generation', values: planIds.map(() => true) },
+    { name: 'Stock footage (stock_only)', values: planIds.map((id) => allowedModesMap[id].includes('stock_only')) },
+    { name: 'Stock + AI images (stock_plus_ai_images)', values: planIds.map((id) => allowedModesMap[id].includes('stock_plus_ai_images')) },
+    { name: 'AI images only (ai_images_only)', values: planIds.map((id) => allowedModesMap[id].includes('ai_images_only')) },
+    { name: 'AI images + AI video (ai_images_plus_ai_video)', values: planIds.map((id) => allowedModesMap[id].includes('ai_images_plus_ai_video')) },
+    { name: 'Monthly credits', values: PLANS.map((p) => p.monthlyCredits === 3 ? '3 videos' : `${p.monthlyCredits} credits`) },
+    { name: 'Custom caption styles', values: planIds.map((id) => id === 'pro' || id === 'agency') },
   ]},
   { category: 'Performance', features: [
     { name: 'Generation speed', values: ['Standard', 'Standard', 'Fast', 'Fastest'] },
-    { name: 'Priority queue', values: [false, true, true, true] },
+    { name: 'Priority queue', values: planIds.map((id) => id !== 'free') },
     { name: 'Support', values: ['Community', 'Email', 'Priority', 'Dedicated'] },
   ]},
 ];

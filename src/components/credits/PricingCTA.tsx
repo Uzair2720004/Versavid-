@@ -18,7 +18,7 @@ export default function PricingCTA() {
       <div className="relative z-10 max-w-2xl mx-auto px-6 text-center">
         <motion.div initial={{ opacity: 0, y: 30 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true, margin: '-15%' }} transition={{ duration: 0.9, ease: [0.16, 1, 0.3, 1] }}>
           <h2 className="text-[40px] sm:text-[60px] lg:text-[72px] font-bold leading-[1.0] tracking-tightest text-gradient text-glow">Automate your<br />first video today.</h2>
-          <p className="mt-6 mx-auto max-w-lg text-[16px] leading-[1.4] text-[#a8aeb8]">Start free with 5 credits. No credit card required. Turn any topic into a YouTube video — automatically.</p>
+          <p className="mt-6 mx-auto max-w-lg text-[16px] leading-[1.4] text-[#a8aeb8]">Start free with 3 videos/month. No credit card required. Turn any topic into a YouTube video — automatically.</p>
           <div className="mt-9 flex flex-col sm:flex-row items-center justify-center gap-3">
             <Link href="/dashboard" className="group inline-flex items-center gap-2 rounded-full bg-white px-7 py-3.5 text-[15px] font-semibold text-black hover:scale-[1.03] transition-transform duration-300">
               Start free <ArrowRight className="h-4 w-4 group-hover:translate-x-0.5 transition-transform" />

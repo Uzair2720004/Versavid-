@@ -20,77 +20,11 @@ export const metadata: Metadata = generateMetadata({
   ogImage: "/images/og-pricing.jpg",
 });
 
-const plans = [
-  {
-    name: "Free",
-    description: "Perfect for trying Versavid",
-    price: 0,
-    currency: "USD",
-    billingPeriod: "P1M",
-    features: [
-      "5 credits/month",
-      "AI script generation",
-      "AI images & video clips",
-      "AI voiceover (2 voices)",
-      "Auto captions",
-      "720p export",
-      "Shorts & standard support",
-    ],
-  },
-  {
-    name: "Pro",
-    description: "For regular content creators",
-    price: 29,
-    currency: "USD",
-    billingPeriod: "P1M",
-    features: [
-      "100 credits/month",
-      "Everything in Free",
-      "10+ AI voices",
-      "1080p export",
-      "Priority rendering",
-      "Commercial license",
-      "Email support",
-    ],
-  },
-  {
-    name: "Studio",
-    description: "For power users & agencies",
-    price: 99,
-    currency: "USD",
-    billingPeriod: "P1M",
-    features: [
-      "500 credits/month",
-      "Everything in Pro",
-      "4K export",
-      "Custom AI voice cloning",
-      "API access",
-      "Team collaboration (5 seats)",
-      "Priority support",
-      "Custom branding",
-    ],
-  },
-];
-
-const comparisonData = [
-  { feature: "Monthly credits", free: "5", pro: "100", studio: "500" },
-  { feature: "Max resolution", free: "720p", pro: "1080p", studio: "4K" },
-  { feature: "AI voices", free: "2", pro: "10+", studio: "Unlimited + cloning" },
-  { feature: "Export formats", free: "MP4", pro: "MP4, MOV", studio: "All formats" },
-  { feature: "Rendering priority", free: "Standard", pro: "Priority", studio: "Highest" },
-  { feature: "Commercial license", free: "✗", pro: "✓", studio: "✓" },
-  { feature: "API access", free: "✗", pro: "✗", studio: "✓" },
-  { feature: "Team seats", free: "1", pro: "1", studio: "5" },
-  { feature: "Custom branding", free: "✗", pro: "✗", studio: "✓" },
-  { feature: "Support", free: "Community", pro: "Email", studio: "Priority + Slack" },
-];
-
 export default function PricingPage() {
   return (
     <>
       <JsonLd data={structuredData.service()} />
       <JsonLd data={structuredData.faq(pricingFaqs)} />
-      <JsonLd data={plans.map((p) => structuredData.productSchema(p))} />
       <div className="relative bg-black min-h-screen">
         <Nav />
         <main className="pt-16">

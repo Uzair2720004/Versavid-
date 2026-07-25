@@ -41,7 +41,7 @@ async function postJSON(url: string, body: unknown) {
 export default function GeneratePage() {
   const params = useParams<{ id: string }>();
   const router = useRouter();
-  const { videos, updateVideo, deductCredits, credits: creditsState } = useApp();
+  const { videos, updateVideo, deductCredits, credits: creditsState, profile, updateProfile } = useApp();
   const video = videos.find((v) => v.id === params?.id);
   const alreadyReady = video?.status === "ready";
 
@@ -264,16 +264,17 @@ if (renderRes.source === "mock") {
 }
 
 log("Render complete.", "success");
-bump();
+        bump();
 
-// 8. Ready — persist + deduct credits
-mark("ready", "done");
-updateVideo(video!.id, {
-  status: "ready",
-  video_url: renderRes.video_url,
-  thumbnail_url: renderRes.thumbnail_url ?? images[0] ?? null,
-});
+        // 8. Ready — persist + deduct credits
+        mark("ready", "done");
+        updateVideo(video!.id, {
+          status: "ready",
+          video_url: renderRes.video_url,
+          thumbnail_url: renderRes.thumbnail_url ?? images[0] ?? null,
+        });
         deductCredits(video!.credits_used, `Video render — ${video!.title}`);
+
         log("🎉 Your video is ready to download!", "success");
         bump();
         setProgress(100);

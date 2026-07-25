@@ -1,6 +1,8 @@
 import { hasRealKey } from "@/lib/utils";
 import { mockRender } from "@/lib/ai/mock";
 import { uid } from "@/lib/utils";
+import { createServerSupabase } from "@/lib/supabase/server";
+import { validateGenerationRequest, incrementFreeTierCount } from "@/lib/plan-enforcement";
 
 export const runtime = "nodejs";
 
@@ -15,6 +17,7 @@ export async function POST(request: Request) {
     music = "uplifting",
     script = "",
     voice = "21m00Tcm4TlvDq8ikWAM",
+    videoId = "",
   } = body as {
     format?: string;
     clips?: unknown[];
@@ -24,9 +27,16 @@ export async function POST(request: Request) {
     music?: string;
     script?: string;
     voice?: string;
+    videoId?: string;
   };
   const seed = uid("render");
   void music;
+
+  // Server-side plan enforcement
+  const enforcement = await validateGenerationRequest(videoId);
+  if (!enforcement.allowed) {
+    return Response.json({ error: enforcement.reason }, { status: enforcement.reason === "Unauthorized" ? 401 : 403 });
+  }
 
   // Build scenes based on generationMode
   let scenes: { elements: { type: string; src: string; duration?: number; resize?: string; zoom?: number }[] }[] = [];
@@ -114,6 +124,10 @@ export async function POST(request: Request) {
             lastStatus = movie?.status ?? "no-status";
 
             if (movie?.status === "done" && movie?.url) {
+              // Increment free tier counter for successful renders
+              if (enforcement.userId && enforcement.plan === "free") {
+                incrementFreeTierCount(enforcement.userId).catch(console.error);
+              }
               return Response.json({
                 video_url: movie.url,
                 thumbnail_url: mockRender(seed, format).thumbnail_url,
@@ -138,5 +152,9 @@ export async function POST(request: Request) {
   }
 
   await new Promise((r) => setTimeout(r, 1100));
+  // Increment free tier counter for successful mock renders too
+  if (enforcement.userId && enforcement.plan === "free") {
+    incrementFreeTierCount(enforcement.userId).catch(console.error);
+  }
   return Response.json({ ...mockRender(seed, format), source: "mock" });
 }

@@ -1,11 +1,14 @@
 ﻿'use client';
 import { motion } from 'framer-motion';
-import { Image, Video, Layers, Upload, X, Lock } from 'lucide-react';
+import { Image, Video, Layers, Film, Lock, Sparkles } from 'lucide-react';
 
-const mediaTypes = [
-  { id: 'images', label: 'Images only', description: 'AI-generated photos with motion', icon: 'Image', tier: 'free' as const },
-  { id: 'videos', label: 'Videos only', description: 'AI-generated video clips', icon: 'Video', tier: 'paid' as const },
-  { id: 'mixed', label: 'Mixed media', description: 'Blend of images and video clips', icon: 'Layers', tier: 'paid' as const },
+type UserPlan = 'free' | 'creator' | 'pro' | 'agency';
+
+const generationModes = [
+  { id: 'stock_only', label: 'Stock footage only', description: 'Curated stock video clips', icon: 'Film', tier: 'free' as const },
+  { id: 'stock_plus_ai_images', label: 'Stock + AI Images', description: 'Stock photos mixed with AI images', icon: 'Layers', tier: 'creator' as const },
+  { id: 'ai_images_only', label: 'AI Images only', description: 'AI-generated images with motion', icon: 'Image', tier: 'creator' as const },
+  { id: 'ai_images_plus_ai_video', label: 'AI Images + AI Video', description: 'AI images animated into video clips', icon: 'Sparkles', tier: 'pro' as const },
 ];
 const photoStyles = [
   { id: 'photorealistic', label: 'Photorealistic', preview: 'from-blue-400/30 to-cyan-600/10' },
@@ -23,7 +26,15 @@ const videoStyles = [
   { id: 'retro', label: 'Retro film', preview: 'from-amber-400/30 to-yellow-600/10' },
   { id: 'neon', label: 'Neon', preview: 'from-fuchsia-400/30 to-purple-600/10' },
 ];
-const iconMap: Record<string, any> = { Image, Video, Layers };
+const iconMap: Record<string, any> = { Image, Video, Layers, Film, Sparkles };
+
+const tierOrder: Record<UserPlan, number> = { free: 0, creator: 1, pro: 2, agency: 3 };
+
+function isModeAllowed(plan: UserPlan, modeTier: 'free' | 'creator' | 'pro'): boolean {
+  const requiredTier = tierOrder[modeTier as UserPlan];
+  const userTier = tierOrder[plan];
+  return userTier >= requiredTier;
+}
 
 function StyleGrid({ options, selected, onSelect }: { options: any[]; selected: string; onSelect: (v: string) => void }) {
   return (
@@ -46,18 +57,19 @@ function StyleGrid({ options, selected, onSelect }: { options: any[]; selected: 
   );
 }
 
-export default function Step2Media({ selections, update, isFreeTier }: { selections: Record<string, any>; update: (k: string, v: any) => void; isFreeTier: boolean }) {
+export default function Step2Media({ selections, update, isFreeTier, userPlan }: { selections: Record<string, any>; update: (k: string, v: any) => void; isFreeTier: boolean; userPlan?: UserPlan }) {
+  const plan = userPlan ?? (isFreeTier ? 'free' : 'pro');
   return (
     <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -20 }} transition={{ duration: 0.5, ease: [0.16, 1, 0.3, 1] }} className="space-y-8">
       <div>
-        <label className="text-[13px] font-medium text-white mb-3 block">Media type</label>
-        <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
-          {mediaTypes.map((m) => {
+        <label className="text-[13px] font-medium text-white mb-3 block">Generation mode</label>
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
+          {generationModes.map((m) => {
             const Icon = iconMap[m.icon];
-            const isActive = selections.mediaType === m.id;
-            const isLocked = isFreeTier && m.tier === 'paid';
+            const isActive = selections.generationMode === m.id;
+            const isLocked = !isModeAllowed(plan, m.tier);
             return (
-              <button key={m.id} onClick={() => !isLocked && update('mediaType', m.id)} disabled={isLocked}
+              <button key={m.id} onClick={() => !isLocked && update('generationMode', m.id)} disabled={isLocked}
                 className={'relative p-4 rounded-xl border text-left transition-all duration-300 overflow-hidden ' + 
                   (isActive ? 'glass-strong border-fuchsia-400/40' : 
                     isLocked ? 'bg-[#0a0a0a] border-white/5 opacity-50 cursor-not-allowed' 
@@ -77,13 +89,13 @@ export default function Step2Media({ selections, update, isFreeTier }: { selecti
           })}
         </div>
       </div>
-      {(selections.mediaType === 'images' || selections.mediaType === 'mixed') && (
+      {(selections.generationMode === 'ai_images_only' || selections.generationMode === 'ai_images_plus_ai_video' || selections.generationMode === 'stock_plus_ai_images') && (
         <div>
           <label className="text-[13px] font-medium text-white mb-3 block">Photo style</label>
           <StyleGrid options={photoStyles} selected={selections.photoStyle || ''} onSelect={(v) => update('photoStyle', v)} />
         </div>
       )}
-      {(selections.mediaType === 'videos' || selections.mediaType === 'mixed') && !isFreeTier && (
+      {(selections.generationMode === 'ai_images_plus_ai_video' || selections.generationMode === 'stock_only') && !isFreeTier && (
         <div>
           <label className="text-[13px] font-medium text-white mb-3 block">Video clip style</label>
           <StyleGrid options={videoStyles} selected={selections.videoStyle || ''} onSelect={(v) => update('videoStyle', v)} />
@@ -91,7 +103,7 @@ export default function Step2Media({ selections, update, isFreeTier }: { selecti
       )}
       <div>
         <label className="text-[13px] font-medium text-white mb-3 block">Reference image <span className="text-[#767D88] font-normal">(optional)</span></label>
-        {selections.refImage ? (
+        {selections.referenceImage ? (
           <div className="flex items-center gap-3 p-3 rounded-xl glass border-fuchsia-400/30">
             <div className="h-12 w-12 rounded-lg bg-gradient-to-br from-fuchsia-500/30 to-purple-600/20 flex items-center justify-center">
               <Image className="h-5 w-5 text-fuchsia-400" />
@@ -100,14 +112,15 @@ export default function Step2Media({ selections, update, isFreeTier }: { selecti
               <p className="text-[12px] text-white font-medium truncate">reference.jpg</p>
               <p className="text-[10px] text-[#767D88]">Uploaded · 2.4 MB</p>
             </div>
-            <button onClick={() => update('refImage', undefined)} className="h-8 w-8 rounded-lg flex items-center justify-center text-[#767D88] hover:text-white hover:bg-white/5 transition-colors">
-              <X className="h-4 w-4" />
+            <button onClick={() => update('referenceImage', undefined)} className="h-8 w-8 rounded-lg flex items-center justify-center text-[#767D88] hover:text-white hover:bg-white/5 transition-colors">
+              <svg className="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
             </button>
           </div>
         ) : (
-          <button onClick={() => update('refImage', 'reference.jpg')} className="w-full p-6 rounded-xl border border-dashed border-white/15 bg-white/[0.02] hover:border-fuchsia-400/30 transition-colors">
+          <button onClick={() => update('referenceImage', 'reference.jpg')} className="w-full p-6 rounded-xl border border-dashed border-white/15 bg-white/[0.02] hover:border-fuchsia-400/30 transition-colors">
             <div className="flex items-center justify-center gap-2 text-[12px] text-[#767D88]">
-              <Upload className="h-4 w-4" /> Upload a reference image to guide the style
+              <svg className="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="17 8 12 3 7 8"></polyline><line x1="12" y1="3" x2="12" y2="15"></line></svg>
+              Upload a reference image to guide the style
             </div>
           </button>
         )}

@@ -16,6 +16,7 @@ export async function POST(request: Request) {
   // Server-side plan enforcement
   const enforcement = await validateGenerationRequest(videoId);
   if (!enforcement.allowed) {
+    console.error("[Footage Route] Plan enforcement failed:", enforcement.reason);
     return Response.json({ error: enforcement.reason }, { status: enforcement.reason === "Unauthorized" ? 401 : 403 });
   }
 

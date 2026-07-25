@@ -118,8 +118,8 @@ async function searchPexelsVideo(query: string): Promise<StockFootageClip | null
       `https://api.pexels.com/videos/search?query=${encodeURIComponent(query)}&per_page=1&orientation=portrait`,
       { headers: { Authorization: key! } }
     );
-    console.error("[Pexels Video] Response status:", res.status);
     const bodyText = await res.text();
+    console.error("[Pexels Video] Response status:", res.status);
     console.error("[Pexels Video] Response body (first 500 chars):", bodyText.slice(0, 500));
     const data = JSON.parse(bodyText);
     if (!res.ok) return null;
@@ -140,12 +140,16 @@ async function searchPexelsPhoto(query: string): Promise<StockFootageClip | null
   if (!hasRealKey(key)) return null;
 
   try {
+    console.error("[Pexels Photo] Search query:", query);
     const res = await fetch(
       `https://api.pexels.com/v1/search?query=${encodeURIComponent(query)}&per_page=1&orientation=portrait`,
       { headers: { Authorization: key! } }
     );
+    const bodyText = await res.text();
+    console.error("[Pexels Photo] Response status:", res.status);
+    console.error("[Pexels Photo] Response body (first 500 chars):", bodyText.slice(0, 500));
+    const data = JSON.parse(bodyText);
     if (!res.ok) return null;
-    const data = await res.json();
     const photo = data?.photos?.[0];
     if (!photo?.src?.original) return null;
     return {

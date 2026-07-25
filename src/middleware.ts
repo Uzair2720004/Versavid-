@@ -22,7 +22,7 @@ function isSupabaseConfigured(): boolean {
   return !!url && !!key && !url.startsWith("your_") && !key.startsWith("your_") && url.length > 10 && key.length > 10;
 }
 
-export function middleware(request: NextRequest) {
+export async function middleware(request: NextRequest) {
   const response = NextResponse.next();
 
   // Security headers
@@ -91,13 +91,12 @@ export function middleware(request: NextRequest) {
     );
 
     // Check for active session
-    supabase.auth.getUser().then(({ data: { user } }) => {
-      if (!user) {
-        const loginUrl = new URL("/login", request.url);
-        loginUrl.searchParams.set("redirect", request.nextUrl.pathname);
-        return NextResponse.redirect(loginUrl);
-      }
-    });
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) {
+      const loginUrl = new URL("/login", request.url);
+      loginUrl.searchParams.set("redirect", request.nextUrl.pathname);
+      return NextResponse.redirect(loginUrl);
+    }
   }
 
   return response;

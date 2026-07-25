@@ -15,18 +15,27 @@ export function middleware(request: NextRequest) {
     "camera=(), microphone=(), geolocation=(), interest-cohort=()"
   );
 
-  // CSP for inline styles/scripts needed by Next.js
+  // CSP for inline styles/scripts needed by Next.js + all external services
+  // NOTE: This must be kept in sync with all external API/CDN calls in the app.
   response.headers.set(
     "Content-Security-Policy",
     [
       "default-src 'self'",
-      "script-src 'self' 'unsafe-eval' 'unsafe-inline' https://www.googletagmanager.com https://www.google-analytics.com",
-      "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com",
+      // Scripts: Next.js needs unsafe-eval/inline; GA/GTM; Chatzy widget
+      "script-src 'self' 'unsafe-eval' 'unsafe-inline' https://www.googletagmanager.com https://www.google-analytics.com https://chatzy-kb-store.s3.amazonaws.com",
+      // Styles: inline styles (Next.js, Tailwind); Google Fonts; Chatzy widget
+      "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com https://chatzy-kb-store.s3.amazonaws.com",
+      // Fonts: Google Fonts + gstatic
       "font-src 'self' data: https://fonts.gstatic.com",
-      "img-src 'self' data: blob: https:",
-      "media-src 'self' data: blob: https:",
-      "connect-src 'self' https://www.google-analytics.com https://api.supabase.co wss://*.supabase.co",
+      // Images: self, data URIs, blobs, Supabase storage, Pexels CDN, fal.ai media, Chatzy icons, ElevenLabs, Google OAuth avatars, placeholder images
+      "img-src 'self' data: blob: https://*.supabase.co https://images.pexels.com https://videos.pexels.com https://fal.media https://v3.fal.media https://chatzy-kb-store.s3.amazonaws.com https://mock.elevenlabs.io https://api.us.elevenlabs.io https://lh3.googleusercontent.com https://storage.googleapis.com https://picsum.photos https://*.json2video.com",
+      // Media (video/audio): Supabase storage, Pexels videos, ElevenLabs previews (GCS + API), JSON2Video renders
+      "media-src 'self' data: blob: https://*.supabase.co https://videos.pexels.com https://api.us.elevenlabs.io https://storage.googleapis.com https://*.json2video.com",
+      // Connect: Supabase (auth + realtime + storage), fal.ai, ElevenLabs (both regions), Pexels API, JSON2Video, GA/GTM, OpenAI (captions)
+      "connect-src 'self' https://*.supabase.co wss://*.supabase.co https://fal.run https://api.elevenlabs.io https://api.us.elevenlabs.io https://api.pexels.com https://api.json2video.com https://api.openai.com https://www.google-analytics.com https://www.googletagmanager.com",
+      // Frames: YouTube embeds
       "frame-src 'self' https://www.youtube.com https://www.youtube-nocookie.com",
+      // Base URI & form actions
       "base-uri 'self'",
       "form-action 'self'",
     ].join("; ")

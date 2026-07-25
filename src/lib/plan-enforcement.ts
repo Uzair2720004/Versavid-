@@ -44,7 +44,10 @@ export async function validateGenerationRequest(
     .eq("id", user.id)
     .maybeSingle();
 
+  console.error("[Plan Enforcement] Profile query result:", { userId: user.id, profile, profileError });
+
   if (profileError || !profile) {
+    console.error("[Plan Enforcement] Profile not found:", { userId: user.id, profileError });
     return { allowed: false, reason: "User profile not found" };
   }
 
@@ -56,6 +59,7 @@ export async function validateGenerationRequest(
     .maybeSingle();
 
   if (videoError || !video) {
+    console.error("[Plan Enforcement] Video not found:", { videoId, videoError });
     return { allowed: false, reason: "Video not found" };
   }
 

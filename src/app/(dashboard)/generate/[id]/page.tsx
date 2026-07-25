@@ -74,7 +74,11 @@ export default function GeneratePage() {
 
     async function run() {
       const s = video!.settings;
-      if ((creditsState?.balance ?? 0) < video!.credits_used) {
+
+      // Free-tier users are gated by monthly_video_count (server-side in plan-enforcement.ts),
+      // not by credits balance. Only paid tiers need credit balance check.
+      const isFreeTier = profile?.plan === 'free';
+      if (!isFreeTier && (creditsState?.balance ?? 0) < video!.credits_used) {
         log("Insufficient credits to start this generation.", "warn");
         updateVideo(video!.id, { status: "failed" });
         return;

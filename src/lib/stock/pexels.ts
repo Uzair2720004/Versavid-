@@ -113,12 +113,16 @@ async function searchPexelsVideo(query: string): Promise<StockFootageClip | null
   if (!hasRealKey(key)) return null;
 
   try {
+    console.error("[Pexels Video] Search query:", query);
     const res = await fetch(
       `https://api.pexels.com/videos/search?query=${encodeURIComponent(query)}&per_page=1&orientation=portrait`,
       { headers: { Authorization: key! } }
     );
+    console.error("[Pexels Video] Response status:", res.status);
+    const bodyText = await res.text();
+    console.error("[Pexels Video] Response body (first 500 chars):", bodyText.slice(0, 500));
+    const data = JSON.parse(bodyText);
     if (!res.ok) return null;
-    const data = await res.json();
     const video = data?.videos?.[0];
     if (!video?.video_files?.[0]?.link) return null;
     return {

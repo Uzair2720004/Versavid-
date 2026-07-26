@@ -1,4 +1,4 @@
-import { createServerSupabase } from "./supabase/server";
+import { createServerSupabase, createAdminSupabase } from "./supabase/server";
 import { PLANS, type GenerationMode } from "./constants";
 
 export interface PlanEnforcementResult {
@@ -31,35 +31,36 @@ export async function validateGenerationRequest(
     return { allowed: false, reason: "Server not configured" };
   }
 
-  // 1. Verify user session
+  // 1. Verify user session (uses anon key + cookies - subject to RLS but we only need auth.getUser())
   const { data: { user } } = await serverSupabase.auth.getUser();
   if (!user) {
     return { allowed: false, reason: "Unauthorized" };
   }
 
-  // 2. Get user's profile from DB (source of truth for plan)
-  const { data: profile, error: profileError } = await serverSupabase
+  // 2. Get user's profile from DB using admin client (bypasses RLS - safe since we verified user.id)
+  const adminSupabase = await createAdminSupabase();
+  if (!adminSupabase) {
+    return { allowed: false, reason: "Admin client not configured" };
+  }
+
+  const { data: profile, error: profileError } = await adminSupabase
     .from("profiles")
     .select("id, plan, monthly_video_count, period_start")
     .eq("id", user.id)
     .maybeSingle();
 
-  console.error("[Plan Enforcement] Profile query result:", { userId: user.id, profile, profileError });
-
   if (profileError || !profile) {
-    console.error("[Plan Enforcement] Profile not found:", { userId: user.id, profileError });
     return { allowed: false, reason: "User profile not found" };
   }
 
   // 3. Get video record to determine generationMode from settings JSONB (never trust client)
-  const { data: video, error: videoError } = await serverSupabase
+  const { data: video, error: videoError } = await adminSupabase
     .from("videos")
     .select("settings")
     .eq("id", videoId)
     .maybeSingle();
 
   if (videoError || !video) {
-    console.error("[Plan Enforcement] Video not found:", { videoId, videoError });
     return { allowed: false, reason: "Video not found" };
   }
 
@@ -94,8 +95,8 @@ export async function validateGenerationRequest(
       if (daysSincePeriodStart >= 30) {
         // Period expired - reset count
         monthlyCount = 0;
-        // Reset in DB
-        await serverSupabase
+        // Reset in DB using admin client
+        await adminSupabase
           .from("profiles")
           .update({ monthly_video_count: 0, period_start: now.toISOString() })
           .eq("id", user.id);
@@ -123,20 +124,19 @@ export async function validateGenerationRequest(
  * Called after a video completes successfully (not at generation start).
  */
 export async function incrementFreeTierCount(
-  userId: string,
-  supabase?: Awaited<ReturnType<typeof createServerSupabase>> | null
+  userId: string
 ): Promise<void> {
-  const serverSupabase = supabase ?? await createServerSupabase();
-  if (!serverSupabase) return;
+  const adminSupabase = await createAdminSupabase();
+  if (!adminSupabase) return;
 
-  const { data: profile } = await serverSupabase
+  const { data: profile } = await adminSupabase
     .from("profiles")
     .select("monthly_video_count, plan")
     .eq("id", userId)
     .maybeSingle();
 
   if (profile && (profile.plan === "free")) {
-    await serverSupabase
+    await adminSupabase
       .from("profiles")
       .update({ monthly_video_count: (profile.monthly_video_count ?? 0) + 1 })
       .eq("id", userId);

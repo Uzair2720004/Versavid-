@@ -112,10 +112,11 @@ export async function POST(request: Request) {
     scriptMode = "ai",
     customScript = "",
     language = "English",
+    generationMode = "stock_only",
   } = body as Record<string, string>;
 
   // Server-side plan enforcement
-  const enforcement = await validateGenerationRequest(videoId);
+  const enforcement = await validateGenerationRequest(videoId, null, generationMode);
   if (!enforcement.allowed) {
     console.error("[Script Route] Plan enforcement failed:", enforcement.reason);
     return Response.json({ error: enforcement.reason }, { status: enforcement.reason === "Unauthorized" ? 401 : 403 });

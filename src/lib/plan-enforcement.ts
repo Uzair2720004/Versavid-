@@ -16,13 +16,14 @@ export interface PlanEnforcementResult {
  * Instead, it:
  * 1. Verifies the user's session
  * 2. Fetches the user's actual plan from the database
- * 3. Looks up the video record by videoId to get the generationMode
+ * 3. Looks up the video record by videoId to get the generationMode (if video exists)
  * 4. Checks if the mode is allowed for their plan
  * 5. For free tier: enforces monthly video limit with 30-day period reset
  */
 export async function validateGenerationRequest(
   videoId: string,
-  supabase?: Awaited<ReturnType<typeof createServerSupabase>> | null
+  supabase?: Awaited<ReturnType<typeof createServerSupabase>> | null,
+  clientGenerationMode?: string
 ): Promise<PlanEnforcementResult> {
   // If no supabase client provided, create one for auth verification
   const serverSupabase = supabase ?? await createServerSupabase();
@@ -54,19 +55,28 @@ export async function validateGenerationRequest(
   }
 
   // 3. Get video record to determine generationMode from settings JSONB (never trust client)
-  const { data: video, error: videoError } = await adminSupabase
-    .from("videos")
-    .select("settings")
-    .eq("id", videoId)
-    .maybeSingle();
+  // BUT: video might not exist yet (race condition on first pipeline step) - don't fail if missing
+  let generationMode: GenerationMode = "stock_only";
+  
+  if (videoId) {
+    const { data: video, error: videoError } = await adminSupabase
+      .from("videos")
+      .select("settings")
+      .eq("id", videoId)
+      .maybeSingle();
 
-  if (videoError || !video) {
-    return { allowed: false, reason: "Video not found" };
+    if (!videoError && video) {
+      // Video exists - use its generationMode
+      const settings = video.settings as Record<string, unknown> | null;
+      generationMode = (settings?.generationMode as GenerationMode) ?? "stock_only";
+    } else if (clientGenerationMode) {
+      // Video doesn't exist yet (first pipeline step) - trust client's generationMode for now
+      // The script route will persist the correct settings to the video record
+      generationMode = clientGenerationMode as GenerationMode;
+    }
+    // If no video and no clientGenerationMode, default to "stock_only"
   }
 
-  // Extract generationMode from settings JSONB
-  const settings = video.settings as Record<string, unknown> | null;
-  const generationMode = (settings?.generationMode as GenerationMode) ?? "stock_only";
   const plan = profile.plan as "free" | "creator" | "pro" | "agency";
 
   // 4. Check if generationMode is allowed for this plan

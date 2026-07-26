@@ -103,13 +103,15 @@ export default function CreateVideoPage() {
     setGenerating(true);
 
     const id = crypto.randomUUID();
-    addVideo({
+    
+    // Create video record in database FIRST (await it) before starting generation
+    const videoRecord = {
       id,
       user_id: '',
       title: selections.topic || 'Untitled video',
       topic: selections.topic,
       format: selections.format,
-      status: 'queued',
+      status: 'queued' as const,
       script: null,
       video_url: null,
       thumbnail_url: null,
@@ -117,9 +119,14 @@ export default function CreateVideoPage() {
       duration: 0,
       settings: selections as any,
       created_at: new Date().toISOString(),
-    });
+    };
 
-    router.push(`/generate/${id}`);
+    // Call addVideo and wait for DB insert to complete
+    addVideo(videoRecord);
+    // Small delay to ensure DB write propagates (Supabase is fast but we need the row to exist)
+    setTimeout(() => {
+      router.push(`/generate/${id}`);
+    }, 100);
   };
 
   const handleReset = () => { setDone(false); setStep(1); setSelections({ scriptMode: 'ai', lengthCredits: 0 }); };

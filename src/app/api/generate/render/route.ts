@@ -33,7 +33,7 @@ export async function POST(request: Request) {
   void music;
 
   // Server-side plan enforcement
-  const enforcement = await validateGenerationRequest(videoId);
+  const enforcement = await validateGenerationRequest(videoId, null, generationMode);
   if (!enforcement.allowed) {
     return Response.json({ error: enforcement.reason }, { status: enforcement.reason === "Unauthorized" ? 401 : 403 });
   }

@@ -110,6 +110,7 @@ try {
           scriptMode: s.scriptMode,
           customScript: video!.script ?? "",
           language: s.language,
+          generationMode: s.generationMode,
         });
         if (cancelled) return;
         const script: string = scriptRes.script ?? "";

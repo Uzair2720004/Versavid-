@@ -55,6 +55,13 @@ export async function searchStockFootage(
 ): Promise<{ footage: StockFootageClip[]; source: "pexels" | "mock" }> {
   const seed = uid("footage");
 
+  // Debug: log whether Pexels API key is configured
+  const pexelsKey = process.env.PEXELS_API_KEY;
+  console.error("[Pexels Debug] PEXELS_API_KEY present:", !!pexelsKey);
+  console.error("[Pexels Debug] PEXELS_API_KEY isRealKey:", hasRealKey(pexelsKey));
+  console.error("[Pexels Debug] Scene texts count:", sceneTexts?.length);
+  console.error("[Pexels Debug] Type:", type);
+
   // If no scene texts, fall back to mock immediately
   if (!sceneTexts || sceneTexts.length === 0) {
     await new Promise((r) => setTimeout(r, 300));
@@ -64,7 +71,7 @@ export async function searchStockFootage(
     };
   }
 
-  if (hasRealKey(process.env.PEXELS_API_KEY)) {
+  if (hasRealKey(pexelsKey)) {
     try {
       const results = await Promise.all(
         sceneTexts.map(async (sceneText, i) => {
@@ -95,8 +102,8 @@ export async function searchStockFootage(
 
       // results always has same length as sceneTexts, no filtering
       return { footage: results, source: "pexels" };
-    } catch {
-      /* fall through to full mock */
+    } catch (err) {
+      console.error("[Pexels Debug] searchStockFootage caught error:", err);
     }
   }
 
@@ -130,7 +137,8 @@ async function searchPexelsVideo(query: string): Promise<StockFootageClip | null
       poster: video.image,
       duration: video.duration,
     };
-  } catch {
+  } catch (err) {
+    console.error("[Pexels Video] Fetch error:", err);
     return null;
   }
 }
@@ -156,7 +164,8 @@ async function searchPexelsPhoto(query: string): Promise<StockFootageClip | null
       url: photo.src.original,
       poster: photo.src.large,
     };
-  } catch {
+  } catch (err) {
+    console.error("[Pexels Photo] Fetch error:", err);
     return null;
   }
 }

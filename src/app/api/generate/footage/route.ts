@@ -13,6 +13,11 @@ export async function POST(request: Request) {
     videoId?: string;
   };
 
+  console.error("[Footage Route] Received sceneTexts count:", sceneTexts?.length);
+  console.error("[Footage Route] Scene texts:", sceneTexts);
+  console.error("[Footage Route] Type:", type);
+  console.error("[Footage Route] Topic:", topic);
+
   // Server-side plan enforcement
   const enforcement = await validateGenerationRequest(videoId, null, "stock_only");
   if (!enforcement.allowed) {
@@ -22,5 +27,6 @@ export async function POST(request: Request) {
 
   const { footage, source } = await searchStockFootage(sceneTexts, type, topic);
 
+  console.error("[Footage Route] Returning footage count:", footage.length, "source:", source);
   return Response.json({ footage, source });
 }

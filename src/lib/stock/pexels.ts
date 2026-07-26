@@ -58,6 +58,7 @@ export async function searchStockFootage(
   // Debug: log whether Pexels API key is configured
   const pexelsKey = process.env.PEXELS_API_KEY;
   console.error("[Pexels Debug] PEXELS_API_KEY present:", !!pexelsKey);
+  console.error("[Pexels Debug] PEXELS_API_KEY length:", pexelsKey?.length ?? 0);
   console.error("[Pexels Debug] PEXELS_API_KEY isRealKey:", hasRealKey(pexelsKey));
   console.error("[Pexels Debug] Scene texts count:", sceneTexts?.length);
   console.error("[Pexels Debug] Type:", type);
@@ -135,6 +136,7 @@ try {
       console.error("[Pexels Video] Response body (first 500 chars):", bodyText.slice(0, 500));
       if (!res.ok) return null;
       const data = JSON.parse(bodyText);
+      console.error("[Pexels Video] Total results:", data?.total_results ?? 0);
       const video = data?.videos?.[0];
       if (!video?.video_files?.[0]?.link) return null;
       return {
@@ -163,6 +165,7 @@ try {
       console.error("[Pexels Photo] Response body (first 500 chars):", bodyText.slice(0, 500));
       if (!res.ok) return null;
       const data = JSON.parse(bodyText);
+      console.error("[Pexels Photo] Total results:", data?.total_results ?? 0);
       const photo = data?.photos?.[0];
       if (!photo?.src?.original) return null;
       return {

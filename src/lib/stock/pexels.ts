@@ -92,16 +92,26 @@ export async function searchStockFootage(
 
           // Fall back to mock for this specific scene
           if (!result) {
+            console.error(`[Pexels Debug] Scene ${i}: Falling back to MOCK for query "${primaryQuery}"`);
             result = type === "video"
               ? { url: `https://v3.fal.media/files/mock/${seed}-${i}.mp4`, poster: placeholderImage(`${seed}-${i}`, 720, 1280), duration: 5 }
               : { url: placeholderImage(`${seed}-${i}`, 1080, 1920), poster: placeholderImage(`${seed}-${i}`, 720, 1280), duration: 4 };
+          } else {
+            console.error(`[Pexels Debug] Scene ${i}: Using REAL Pexels result for query "${primaryQuery}"`);
           }
 
           return result;
         })
       );
 
-      // results always has same length as sceneTexts, no filtering
+      // Check if any results are mock (contain fal.media/mock or placeholderImage)
+      const mockCount = results.filter(r => r.url?.includes("fal.media/files/mock") || r.url?.includes("placeholder")).length;
+      if (mockCount > 0) {
+        console.error(`[Pexels Debug] ${mockCount}/${results.length} scenes fell back to MOCK — overall source reported as "pexels" but contains mock URLs`);
+      } else {
+        console.error(`[Pexels Debug] Using REAL Pexels results for all ${results.length} scenes`);
+      }
+
       return { footage: results, source: "pexels" };
     } catch (err) {
       console.error("[Pexels Debug] searchStockFootage caught error:", err);
@@ -114,6 +124,7 @@ export async function searchStockFootage(
   }
 
   await new Promise((r) => setTimeout(r, 500));
+  console.error("[Pexels Debug] Falling back to MOCK — reason: PEXELS_API_KEY missing or invalid");
   return {
     footage: mockStockFootage(seed, sceneTexts.length, type),
     source: "mock",

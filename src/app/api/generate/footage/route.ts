@@ -6,11 +6,12 @@ export const runtime = "nodejs";
 
 export async function POST(request: Request) {
   const body = await request.json().catch(() => ({}));
-  const { sceneTexts = [], type = "video", topic, videoId = "" } = body as {
+  const { sceneTexts = [], type = "video", topic, videoId = "", generationMode = "stock_only" } = body as {
     sceneTexts?: string[];
     type?: "video" | "photo";
     topic?: string;
     videoId?: string;
+    generationMode?: string;
   };
 
   console.error("[Footage Route] Received sceneTexts count:", sceneTexts?.length);
@@ -19,7 +20,7 @@ export async function POST(request: Request) {
   console.error("[Footage Route] Topic:", topic);
 
   // Server-side plan enforcement
-  const enforcement = await validateGenerationRequest(videoId, null, "stock_only");
+  const enforcement = await validateGenerationRequest(videoId, null, generationMode);
   if (!enforcement.allowed) {
     console.error("[Footage Route] Plan enforcement failed:", enforcement.reason);
     return Response.json({ error: enforcement.reason }, { status: enforcement.reason === "Unauthorized" ? 401 : 403 });

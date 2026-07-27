@@ -159,6 +159,8 @@ try {
             sceneTexts: parseScenes(script),
             type: "video",
             topic: s.topic,
+            generationMode: s.generationMode,
+            videoId: video!.id,
           });
           if (cancelled) return;
           footage = footageRes.footage ?? [];
@@ -171,6 +173,8 @@ try {
             sceneTexts: parseScenes(script),
             type: "photo",
             topic: s.topic,
+            generationMode: s.generationMode,
+            videoId: video!.id,
           });
           if (cancelled) return;
           footage = footageRes.footage ?? [];
@@ -251,6 +255,7 @@ try {
           music: s.music,
           script,
           voice: s.voice,
+          videoId: video!.id,
         };
 
         if (mode === "stock_only") {

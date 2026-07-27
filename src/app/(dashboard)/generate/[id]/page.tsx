@@ -263,12 +263,12 @@ try {
         };
 
         if (mode === "stock_only") {
-          renderPayload.clips = footage;
+          renderPayload.footage = footage;
           renderPayload.images = [];
           renderPayload.generationMode = "stock_only";
         } else if (mode === "stock_plus_ai_images") {
           // For now: use stock footage as clips, no AI images
-          renderPayload.clips = footage;
+          renderPayload.footage = footage;
           renderPayload.images = [];
           renderPayload.generationMode = "stock_plus_ai_images";
         } else if (mode === "ai_images_only") {
@@ -281,18 +281,18 @@ try {
           renderPayload.generationMode = "ai_images_plus_ai_video";
         }
 
-        const renderRes = await postJSON("/api/generate/render", renderPayload);
+const renderRes = await postJSON("/api/generate/render", renderPayload);
         if (cancelled) return;
-mark("render", "done");
+        mark("render", "done");
 
-if (renderRes.source === "mock") {
-  log("Render failed — JSON2Video did not complete in time (fell back to mock).", "warn");
-  updateVideo(video!.id, { status: "failed" });
-  setFinished(false);
-  return;
-}
+        if (renderRes.error || renderRes.source === "mock" || renderRes.source === "validation" || renderRes.source === "failed") {
+          log(`Render failed: ${renderRes.error ?? renderRes.source}`, "warn");
+          updateVideo(video!.id, { status: "failed" });
+          setFinished(false);
+          return;
+        }
 
-log("Render complete.", "success");
+        log("Render complete.", "success");
         bump();
 
         // 8. Ready — persist + deduct credits

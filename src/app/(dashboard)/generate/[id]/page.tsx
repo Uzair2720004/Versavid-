@@ -44,6 +44,10 @@ async function postJSON(url: string, body: unknown) {
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify(body),
   });
+  if (!res.ok) {
+    const error = await res.json().catch(() => ({ error: `HTTP ${res.status}` }));
+    throw new Error(error.error ?? `HTTP ${res.status}`);
+  }
   return res.json();
 }
 

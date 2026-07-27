@@ -29,18 +29,23 @@ export async function validateGenerationRequest(
   const serverSupabase = supabase ?? await createServerSupabase();
   
   if (!serverSupabase) {
+    console.error("[Plan Enforcement] serverSupabase is null/undefined");
     return { allowed: false, reason: "Server not configured" };
   }
 
   // 1. Verify user session (uses anon key + cookies - subject to RLS but we only need auth.getUser())
   const { data: { user } } = await serverSupabase.auth.getUser();
   if (!user) {
+    console.error("[Plan Enforcement] No user from auth.getUser()");
     return { allowed: false, reason: "Unauthorized" };
   }
+  console.error("[Plan Enforcement] Authenticated user.id:", user.id);
 
   // 2. Get user's profile from DB using admin client (bypasses RLS - safe since we verified user.id)
   const adminSupabase = await createAdminSupabase();
+  console.error("[Plan Enforcement] createAdminSupabase() returned:", adminSupabase ? "CLIENT OBJECT" : "NULL");
   if (!adminSupabase) {
+    console.error("[Plan Enforcement] adminSupabase is null/undefined");
     return { allowed: false, reason: "Admin client not configured" };
   }
 
@@ -50,7 +55,14 @@ export async function validateGenerationRequest(
     .eq("id", user.id)
     .maybeSingle();
 
+  console.error("[Plan Enforcement] Raw profile query result:", JSON.stringify({ 
+    data: profile, 
+    error: profileError,
+    searchedUserId: user.id 
+  }, (key, value) => value instanceof Error ? { message: value.message, stack: value.stack } : value));
+
   if (profileError || !profile) {
+    console.error("[Plan Enforcement] Profile not found or error:", profileError?.message ?? "No profile row");
     return { allowed: false, reason: "User profile not found" };
   }
 

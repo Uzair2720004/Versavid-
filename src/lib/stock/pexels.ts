@@ -135,7 +135,7 @@ export async function searchStockFootage(
 async function fetchPexelsVideo(key: string, query: string): Promise<StockFootageClip | null> {
   const res = await fetch(
     `https://api.pexels.com/videos/search?query=${encodeURIComponent(query)}&per_page=1&orientation=portrait`,
-    { headers: { Authorization: `Bearer ${key}` } }
+    { headers: { Authorization: `${key}` } }
   );
   const bodyText = await res.text();
   console.error("[Pexels Video] Response status:", res.status);
@@ -178,7 +178,7 @@ async function searchPexelsVideo(query: string): Promise<StockFootageClip | null
 async function fetchPexelsPhoto(key: string, query: string): Promise<StockFootageClip | null> {
   const res = await fetch(
     `https://api.pexels.com/v1/search?query=${encodeURIComponent(query)}&per_page=1&orientation=portrait`,
-    { headers: { Authorization: `Bearer ${key}` } }
+    { headers: { Authorization: `${key}` } }
   );
   const bodyText = await res.text();
   console.error("[Pexels Photo] Response status:", res.status);

@@ -59,7 +59,9 @@ export async function POST(request: Request) {
   }
 
   if (missingAssetError) {
-    console.error(`Render validation failed: ${missingAssetError}`);
+    console.error(`[Render Route] Validation failed for mode "${generationMode}": ${missingAssetError}`);
+    console.error(`[Render Route] Received body keys:`, Object.keys(body));
+    console.error(`[Render Route] footage length: ${footageList?.length ?? 0}, clips length: ${clipsList?.length ?? 0}, images length: ${imagesList?.length ?? 0}`);
     return Response.json({ error: missingAssetError, source: "validation" }, { status: 400 });
   }
 

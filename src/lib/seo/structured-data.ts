@@ -104,7 +104,7 @@ export const structuredData = {
         {
           "@type": "Offer",
           name: "Free",
-          description: "5 credits/month for testing",
+          description: "3 free videos every month",
           price: "0",
           priceCurrency: "USD",
           availability: "https://schema.org/InStock",
@@ -277,7 +277,7 @@ export const pricingFaqs = [
   {
     question: "Is there a free trial?",
     answer:
-      "Yes. Start free with 10 credits — enough to create several videos and test the full pipeline.",
+      "Yes. Start free with 3 videos every month — enough to create several videos and test the full pipeline.",
   },
   {
     question: "What payment methods do you accept?",

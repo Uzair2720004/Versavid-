@@ -11,8 +11,6 @@ import { AuthDemo } from "./AuthDemo";
 import { useApp } from "@/lib/store";
 import { passwordStrength } from "@/lib/utils";
 
-const SIGNUP_BONUS_CREDITS = 15;
-
 export function AuthScreen({ mode }: { mode: "login" | "signup" }) {
   const router = useRouter();
   const { signup, login, loginWithGoogle } = useApp();

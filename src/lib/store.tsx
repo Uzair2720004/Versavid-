@@ -149,7 +149,7 @@ function seedTransactions(userId: string): Transaction[] {
       type: "bonus",
       status: "completed",
       payment_id: null,
-      description: "Welcome bonus — 15 free credits",
+      description: "Welcome — 3 free videos every month",
       created_at: new Date(now - 72 * 3600_000).toISOString(),
     },
     {

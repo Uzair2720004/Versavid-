@@ -6,7 +6,7 @@ export const STATS_BAR = [
   { value: "5 min", label: "Average build time" },
   { value: "8 steps", label: "Fully automated" },
   { value: "6", label: "Languages supported" },
-  { value: "5", label: "Free credits on signup" },
+  { value: "3", label: "Free videos per month" },
 ];
 
 // ---- Credit cost lookup table (single source of truth) ----

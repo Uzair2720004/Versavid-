@@ -55,7 +55,7 @@ export default function SignupPage() {
               Join creators using Versavid to automate their entire YouTube pipeline with AI.
             </p>
             <div className="mt-8 space-y-3">
-              {['5 free credits on signup', 'AI script, visuals, voiceover & captions', 'YouTube Shorts & long-form support', 'No credit card required'].map((f) => (
+              {['3 free videos every month', 'AI script, visuals, voiceover & captions', 'YouTube Shorts & long-form support', 'No credit card required'].map((f) => (
                 <div key={f} className="flex items-center gap-3 text-[13px] text-[#a8aeb8]">
                   <span className="h-5 w-5 rounded-full bg-cyan-400/20 flex items-center justify-center shrink-0">
                     <Sparkles className="h-2.5 w-2.5 text-cyan-400" />
@@ -94,7 +94,7 @@ export default function SignupPage() {
                 </div>
                 <h2 className="text-[22px] font-bold text-white">Check your email</h2>
                 <p className="mt-2 text-[13px] text-[#767D88] leading-[1.5]">
-                  We sent a confirmation link to <span className="text-white">{email}</span>. Click it to activate your account and get your 5 free credits.
+                  We sent a confirmation link to <span className="text-white">{email}</span>. Click it to activate your account and start creating — 3 free videos every month.
                 </p>
                 <Link href="/login" className="mt-6 inline-flex items-center gap-2 text-[12px] text-cyan-400 hover:text-cyan-300 transition-colors">
                   Back to sign in <ArrowRight className="h-3.5 w-3.5" />
@@ -142,7 +142,7 @@ export default function SignupPage() {
                 </form>
 
                 <p className="mt-4 text-center text-[11px] text-[#767D88] flex items-center justify-center gap-1">
-                  <Sparkles className="h-3 w-3 text-cyan-400" /> Get 5 free credits — no credit card required
+                  <Sparkles className="h-3 w-3 text-cyan-400" /> 3 free videos every month — no credit card required
                 </p>
                 <p className="mt-5 text-center text-[12px] text-[#767D88]">
                   Already have an account?{' '}

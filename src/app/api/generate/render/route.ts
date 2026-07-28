@@ -101,31 +101,39 @@ export async function POST(request: Request) {
 
   if (hasRealKey(process.env.JSON2VIDEO_API_KEY)) {
     try {
+      const requestPayload = {
+        resolution: format === "16:9" ? "full-hd" : "custom",
+        width: format === "16:9" ? 1920 : 1080,
+        height: format === "16:9" ? 1080 : 1920,
+        scenes,
+        elements: cleanText
+          ? [
+              { type: "voice", text: cleanText, model: "elevenlabs", voice: voice, connection: "elevenlabs-main" },
+              { type: "subtitles", language: "auto" },
+            ]
+          : [],
+      };
+      console.error("JSON2Video SUBMIT REQUEST:", JSON.stringify(requestPayload, null, 2));
       const submitRes = await fetch("https://api.json2video.com/v2/movies", {
         method: "POST",
         headers: {
           "x-api-key": `${process.env.JSON2VIDEO_API_KEY}`,
           "Content-Type": "application/json",
         },
-        body: JSON.stringify({
-          resolution: format === "16:9" ? "full-hd" : "custom",
-          width: format === "16:9" ? 1920 : 1080,
-          height: format === "16:9" ? 1080 : 1920,
-          scenes,
-          elements: cleanText
-            ? [
-                { type: "voice", text: cleanText, model: "elevenlabs", voice: voice, connection: "elevenlabs-main" },
-                { type: "subtitles", language: "auto" },
-              ]
-            : [],
-        }),
+        body: JSON.stringify(requestPayload),
+      });
+
+      const submitResText = await submitRes.text();
+      console.error("JSON2Video SUBMIT RESPONSE:", {
+        status: submitRes.status,
+        statusText: submitRes.statusText,
+        body: submitResText,
       });
 
       if (!submitRes.ok) {
-        const errText = await submitRes.text().catch(() => "");
-        console.error(`JSON2Video submit failed: ${submitRes.status} ${submitRes.statusText} — ${errText}`);
+        console.error(`JSON2Video submit failed: ${submitRes.status} ${submitRes.statusText} — ${submitResText}`);
       } else {
-        const submitData = await submitRes.json();
+        const submitData = JSON.parse(submitResText);
         const projectId = submitData?.project;
 
         if (!projectId) {
@@ -141,12 +149,20 @@ export async function POST(request: Request) {
               { headers: { "x-api-key": `${process.env.JSON2VIDEO_API_KEY}` } }
             );
 
+            const statusResText = await statusRes.text();
+            console.error("JSON2Video POLL RESPONSE:", {
+              attempt: attempt + 1,
+              status: statusRes.status,
+              statusText: statusRes.statusText,
+              body: statusResText,
+            });
+
             if (!statusRes.ok) {
-              console.error(`JSON2Video poll failed (attempt ${attempt + 1}): ${statusRes.status}`);
+              console.error(`JSON2Video poll failed (attempt ${attempt + 1}): ${statusRes.status} ${statusRes.statusText} — ${statusResText}`);
               continue;
             }
 
-            const statusData = await statusRes.json();
+            const statusData = JSON.parse(statusResText);
             const movie = statusData?.movie;
             lastStatus = movie?.status ?? "no-status";
 

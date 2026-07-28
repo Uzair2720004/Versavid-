@@ -210,7 +210,7 @@ export default function CreateVideoPage() {
                     )}
                   </div>
                 </div>
-                <SummaryPanel selections={selections} credits={credits} onGenerate={() => { setStep(4); if (canGenerate) handleGenerate(); }} canGenerate={!!canGenerate} />
+                <SummaryPanel selections={selections} credits={credits} onGenerate={() => { setStep(4); if (canGenerate) handleGenerate(); }} canGenerate={!!canGenerate} isFreeTier={isFreeTier} monthlyVideoCount={profile?.monthly_video_count ?? 0} />
               </div>
             )}
           </main>

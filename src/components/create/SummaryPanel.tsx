@@ -20,7 +20,7 @@ function SummaryRow({ icon: Icon, label, value }: { icon: any; label: string; va
   );
 }
 
-export default function SummaryPanel({ selections, credits, onGenerate, canGenerate }: { selections: Record<string, any>; credits: number; onGenerate: () => void; canGenerate: boolean }) {
+export default function SummaryPanel({ selections, credits, onGenerate, canGenerate, isFreeTier, monthlyVideoCount }: { selections: Record<string, any>; credits: number; onGenerate: () => void; canGenerate: boolean; isFreeTier: boolean; monthlyVideoCount: number }) {
   const { credits: userCredits } = useApp();
   const balance = (userCredits as any)?.balance ?? userCredits ?? 0;
   const formatIcon = selections.format === 'vertical' ? Smartphone : Monitor;
@@ -50,25 +50,43 @@ export default function SummaryPanel({ selections, credits, onGenerate, canGener
           <SummaryRow icon={Type} label="Captions" value={selections.captionStyle || '-'} />
         </div>
         <div className="p-5 border-t border-white/10 bg-gradient-to-b from-transparent to-fuchsia-500/5">
-          <div className="flex items-center justify-between mb-4">
-            <span className="text-[12px] text-[#767D88]">Credits required</span>
-            <span className="text-[20px] font-bold text-white">{credits}</span>
-          </div>
-          <button onClick={onGenerate} disabled={!canGenerate}
-            className={'w-full h-11 rounded-xl font-medium text-[14px] flex items-center justify-center gap-2 transition-all duration-300 ' +
-              (canGenerate ? 'bg-gradient-to-r from-fuchsia-500 to-purple-600 text-white hover:scale-[1.03]' : 'bg-white/5 text-[#767D88] cursor-not-allowed')}>
-            <Wand2 className="h-4 w-4" /> Generate Video
-          </button>
+          {!isFreeTier ? (
+            <>
+              <div className="flex items-center justify-between mb-4">
+                <span className="text-[12px] text-[#767D88]">Credits required</span>
+                <span className="text-[20px] font-bold text-white">{credits}</span>
+              </div>
+              <button onClick={onGenerate} disabled={!canGenerate}
+                className={'w-full h-11 rounded-xl font-medium text-[14px] flex items-center justify-center gap-2 transition-all duration-300 ' +
+                  (canGenerate ? 'bg-gradient-to-r from-fuchsia-500 to-purple-600 text-white hover:scale-[1.03]' : 'bg-white/5 text-[#767D88] cursor-not-allowed')}>
+                <Wand2 className="h-4 w-4" /> Generate Video
+              </button>
+            </>
+          ) : (
+            <>
+              <div className="flex items-center justify-between mb-4">
+                <span className="text-[12px] text-[#767D88]">Free videos used this month</span>
+                <span className="text-[20px] font-bold text-white">{monthlyVideoCount} / 3</span>
+              </div>
+              <button onClick={onGenerate} disabled={!canGenerate}
+                className={'w-full h-11 rounded-xl font-medium text-[14px] flex items-center justify-center gap-2 transition-all duration-300 ' +
+                  (canGenerate ? 'bg-gradient-to-r from-fuchsia-500 to-purple-600 text-white hover:scale-[1.03]' : 'bg-white/5 text-[#767D88] cursor-not-allowed')}>
+                <Wand2 className="h-4 w-4" /> Generate Video
+              </button>
+            </>
+          )}
           {!canGenerate && <p className="mt-2 text-center text-[10px] text-[#767D88]">Complete all steps to generate</p>}
         </div>
       </div>
-      <div className="mt-3 rounded-xl glass p-4 flex items-center justify-between">
-        <div>
-          <p className="text-[11px] text-[#767D88]">Your balance</p>
-          <p className="text-[16px] font-bold text-white">{balance} credits</p>
+      {!isFreeTier && (
+        <div className="mt-3 rounded-xl glass p-4 flex items-center justify-between">
+          <div>
+            <p className="text-[11px] text-[#767D88]">Your balance</p>
+            <p className="text-[16px] font-bold text-white">{balance} credits</p>
+          </div>
+          <Link href="/credits" className="text-[11px] text-fuchsia-400 hover:text-fuchsia-300 transition-colors">Top up</Link>
         </div>
-        <Link href="/credits" className="text-[11px] text-fuchsia-400 hover:text-fuchsia-300 transition-colors">Top up -&gt;</Link>
-      </div>
+      )}
     </motion.aside>
   );
 }

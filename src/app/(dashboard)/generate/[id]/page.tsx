@@ -295,14 +295,16 @@ const renderRes = await postJSON("/api/generate/render", renderPayload);
         log("Render complete.", "success");
         bump();
 
-        // 8. Ready — persist + deduct credits
+        // 8. Ready — persist + deduct credits (skip for free tier)
         mark("ready", "done");
         updateVideo(video!.id, {
           status: "ready",
           video_url: renderRes.video_url,
           thumbnail_url: renderRes.thumbnail_url ?? images[0] ?? null,
         });
-        deductCredits(video!.credits_used, `Video render — ${video!.title}`);
+        if (!isFreeTier) {
+          deductCredits(video!.credits_used, `Video render — ${video!.title}`);
+        }
 
         log("🎉 Your video is ready to download!", "success");
         bump();

@@ -91,7 +91,7 @@ export async function POST(request: Request) {
   if (generationMode === "stock_only" || generationMode === "stock_plus_ai_images") {
     // Use stock footage (video) for all scenes
     scenes = footageList.map((clip) => ({
-      elements: [{ type: "video", src: clip.url, duration: clip.duration ?? 5, resize: "cover" }],
+      elements: [{ type: "video", src: clip.url, duration: Math.min(clip.duration ?? 5, 5), resize: "cover" }],
     }));
   } else if (generationMode === "ai_images_only") {
     // Use AI-generated images as stills
@@ -104,7 +104,7 @@ export async function POST(request: Request) {
     const leftoverImages = (images as string[]).slice(clipList.length);
     scenes = [
       ...clipList.map((clip) => ({
-        elements: [{ type: "video", src: clip.url, duration: clip.duration ?? 5, resize: "cover" }],
+        elements: [{ type: "video", src: clip.url, duration: Math.min(clip.duration ?? 5, 5), resize: "cover" }],
       })),
       ...leftoverImages.map((img) => ({
         elements: [{ type: "image", src: img, duration: 4, resize: "cover", zoom: 2 }],

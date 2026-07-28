@@ -51,7 +51,7 @@ export async function middleware(request: NextRequest) {
       // Images: self, data URIs, blobs, Supabase storage, Pexels CDN, fal.ai media, Chatzy icons, ElevenLabs, Google OAuth avatars, placeholder images (picsum), JSON2Video S3 CDN
       "img-src 'self' data: blob: https://*.supabase.co https://images.pexels.com https://videos.pexels.com https://fal.media https://v3.fal.media https://chatzy-kb-store.s3.amazonaws.com https://mock.elevenlabs.io https://api.us.elevenlabs.io https://lh3.googleusercontent.com https://storage.googleapis.com https://picsum.photos https://fastly.picsum.photos https://*.json2video.com https://json2video-cdn*.s3.amazonaws.com",
       // Media (video/audio): Supabase storage, Pexels videos, ElevenLabs previews (GCS + API), JSON2Video S3 CDN
-      "media-src 'self' data: blob: https://*.supabase.co https://videos.pexels.com https://api.us.elevenlabs.io https://storage.googleapis.com https://*.json2video.com https://json2video-cdn*.s3.amazonaws.com",
+      "media-src 'self' data: blob: https://*.supabase.co https://videos.pexels.com https://api.us.elevenlabs.io https://storage.googleapis.com https://*.json2video.com https://*.s3.amazonaws.com",
       // Connect: Supabase (auth + realtime + storage), fal.ai, ElevenLabs (both regions), Pexels API, JSON2Video, GA/GTM, OpenAI (captions), Chatzy widget
       "connect-src 'self' https://*.supabase.co wss://*.supabase.co https://fal.run https://api.elevenlabs.io https://api.us.elevenlabs.io https://api.pexels.com https://api.json2video.com https://api.openai.com https://www.google-analytics.com https://www.googletagmanager.com https://app.chatzy.ai",
       // Frames: YouTube embeds

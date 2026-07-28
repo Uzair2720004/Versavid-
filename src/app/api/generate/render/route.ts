@@ -180,6 +180,13 @@ export async function POST(request: Request) {
 
   // If we reach here, real render failed — return error instead of mock
   const errorMsg = "JSON2Video render failed or timed out. No valid video URL returned.";
-  console.error(errorMsg);
+  console.error("JSON2Video render failed (500):", {
+    message: errorMsg,
+    generationMode,
+    format,
+    scenesCount: scenes.length,
+    hasScript: !!cleanText,
+    hasJson2VideoKey: hasRealKey(process.env.JSON2VIDEO_API_KEY),
+  });
   return Response.json({ error: errorMsg, source: "failed" }, { status: 500 });
 }

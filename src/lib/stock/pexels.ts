@@ -132,61 +132,89 @@ export async function searchStockFootage(
 }
 
 // Keep the helper functions for internal use
-async function searchPexelsVideo(query: string): Promise<StockFootageClip | null> {
-  const key = process.env.PEXELS_API_KEY;
-  if (!hasRealKey(key)) return null;
+async function fetchPexelsVideo(key: string, query: string): Promise<StockFootageClip | null> {
+  const res = await fetch(
+    `https://api.pexels.com/videos/search?query=${encodeURIComponent(query)}&per_page=1&orientation=portrait`,
+    { headers: { Authorization: `Bearer ${key}` } }
+  );
+  const bodyText = await res.text();
+  console.error("[Pexels Video] Response status:", res.status);
+  console.error("[Pexels Video] Response body (first 500 chars):", bodyText.slice(0, 500));
+  if (!res.ok) return null;
+  const data = JSON.parse(bodyText);
+  console.error("[Pexels Video] Total results:", data?.total_results ?? 0);
+  const video = data?.videos?.[0];
+  if (!video?.video_files?.[0]?.link) return null;
+  return {
+    url: video.video_files[0].link,
+    poster: video.image,
+    duration: video.duration,
+  };
+}
 
-try {
-      console.error("[Pexels Video] Search query:", query);
-      const res = await fetch(
-        `https://api.pexels.com/videos/search?query=${encodeURIComponent(query)}&per_page=1&orientation=portrait`,
-        { headers: { Authorization: `Bearer ${key}` } }
-      );
-      const bodyText = await res.text();
-      console.error("[Pexels Video] Response status:", res.status);
-      console.error("[Pexels Video] Response body (first 500 chars):", bodyText.slice(0, 500));
-      if (!res.ok) return null;
-      const data = JSON.parse(bodyText);
-      console.error("[Pexels Video] Total results:", data?.total_results ?? 0);
-      const video = data?.videos?.[0];
-      if (!video?.video_files?.[0]?.link) return null;
-      return {
-        url: video.video_files[0].link,
-        poster: video.image,
-        duration: video.duration,
-      };
-    } catch (err) {
-      console.error("[Pexels Video] Fetch error:", err);
-      return null;
+async function searchPexelsVideo(query: string): Promise<StockFootageClip | null> {
+  const rawKey = process.env.PEXELS_API_KEY;
+  if (!hasRealKey(rawKey)) return null;
+  const key: string = rawKey!;
+
+  try {
+    console.error("[Pexels Video] Search query:", query);
+    let result = await fetchPexelsVideo(key, query);
+
+    // Retry once after 500ms on any failure (transient 401, rate-limit, etc.)
+    if (!result) {
+      console.error("[Pexels Video] First attempt failed, retrying after 500ms...");
+      await new Promise((r) => setTimeout(r, 500));
+      result = await fetchPexelsVideo(key, query);
     }
+
+    return result;
+  } catch (err) {
+    console.error("[Pexels Video] Fetch error:", err);
+    return null;
+  }
+}
+
+async function fetchPexelsPhoto(key: string, query: string): Promise<StockFootageClip | null> {
+  const res = await fetch(
+    `https://api.pexels.com/v1/search?query=${encodeURIComponent(query)}&per_page=1&orientation=portrait`,
+    { headers: { Authorization: `Bearer ${key}` } }
+  );
+  const bodyText = await res.text();
+  console.error("[Pexels Photo] Response status:", res.status);
+  console.error("[Pexels Photo] Response body (first 500 chars):", bodyText.slice(0, 500));
+  if (!res.ok) return null;
+  const data = JSON.parse(bodyText);
+  console.error("[Pexels Photo] Total results:", data?.total_results ?? 0);
+  const photo = data?.photos?.[0];
+  if (!photo?.src?.original) return null;
+  return {
+    url: photo.src.original,
+    poster: photo.src.large,
+  };
 }
 
 async function searchPexelsPhoto(query: string): Promise<StockFootageClip | null> {
-  const key = process.env.PEXELS_API_KEY;
-  if (!hasRealKey(key)) return null;
+  const rawKey = process.env.PEXELS_API_KEY;
+  if (!hasRealKey(rawKey)) return null;
+  const key: string = rawKey!;
 
-try {
-      console.error("[Pexels Photo] Search query:", query);
-      const res = await fetch(
-        `https://api.pexels.com/v1/search?query=${encodeURIComponent(query)}&per_page=1&orientation=portrait`,
-        { headers: { Authorization: `Bearer ${key}` } }
-      );
-      const bodyText = await res.text();
-      console.error("[Pexels Photo] Response status:", res.status);
-      console.error("[Pexels Photo] Response body (first 500 chars):", bodyText.slice(0, 500));
-      if (!res.ok) return null;
-      const data = JSON.parse(bodyText);
-      console.error("[Pexels Photo] Total results:", data?.total_results ?? 0);
-      const photo = data?.photos?.[0];
-      if (!photo?.src?.original) return null;
-      return {
-        url: photo.src.original,
-        poster: photo.src.large,
-      };
-    } catch (err) {
-      console.error("[Pexels Photo] Fetch error:", err);
-      return null;
+  try {
+    console.error("[Pexels Photo] Search query:", query);
+    let result = await fetchPexelsPhoto(key, query);
+
+    // Retry once after 500ms on any failure (transient 401, rate-limit, etc.)
+    if (!result) {
+      console.error("[Pexels Photo] First attempt failed, retrying after 500ms...");
+      await new Promise((r) => setTimeout(r, 500));
+      result = await fetchPexelsPhoto(key, query);
     }
+
+    return result;
+  } catch (err) {
+    console.error("[Pexels Photo] Fetch error:", err);
+    return null;
+  }
 }
 
 function mockStockFootage(

@@ -39,9 +39,29 @@ export async function POST(request: Request) {
   }
 
   // Validate required assets for each generation mode BEFORE calling JSON2Video
-  const footageList = footage as { url: string; poster?: string; duration?: number }[];
+  const rawFootage = footage as { url: string; poster?: string; duration?: number }[];
   const imagesList = images as string[];
   const clipsList = clips as { url: string; poster?: string; duration?: number }[];
+
+  // Filter out mock URLs from footage — JSON2Video can't download fake mock files
+  const MOCK_PATTERN = "fal.media/files/mock";
+  const cleanFootage = rawFootage.filter((c) => !c.url?.includes(MOCK_PATTERN));
+  const mockCount = rawFootage.length - cleanFootage.length;
+
+  if (mockCount > 0 && (generationMode === "stock_only" || generationMode === "stock_plus_ai_images")) {
+    const realCount = cleanFootage.length;
+    const totalCount = rawFootage.length;
+
+    if (realCount >= 2 && realCount >= totalCount / 2) {
+      console.error(`[Render Route] Filtered out ${mockCount}/${totalCount} mock scenes (${realCount} real scenes remaining)`);
+    } else {
+      const errorMsg = `Stock footage retrieval incomplete: ${mockCount}/${totalCount} scenes are mock URLs. Only ${realCount} real scenes available, which is insufficient for a render.`;
+      console.error(`[Render Route] ${errorMsg}`);
+      return Response.json({ error: errorMsg, source: "validation" }, { status: 400 });
+    }
+  }
+
+  const footageList = cleanFootage;
 
   let missingAssetError: string | null = null;
   if (generationMode === "stock_only" || generationMode === "stock_plus_ai_images") {
@@ -70,7 +90,6 @@ export async function POST(request: Request) {
 
   if (generationMode === "stock_only" || generationMode === "stock_plus_ai_images") {
     // Use stock footage (video) for all scenes
-    const footageList = footage as { url: string; poster?: string; duration?: number }[];
     scenes = footageList.map((clip) => ({
       elements: [{ type: "video", src: clip.url, duration: clip.duration ?? 5, resize: "cover" }],
     }));

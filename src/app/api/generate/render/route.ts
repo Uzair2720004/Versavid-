@@ -32,9 +32,38 @@ export async function POST(request: Request) {
     captionStyle?: string;
   };
   const MUSIC_TRACKS: Record<string, string> = {
-    uplifting: "https://cdn.pixabay.com/audio/2022/03/15/audio_c8e70c3f3d.mp3",
-    calm: "https://cdn.pixabay.com/audio/2022/05/16/audio_1808fbf07a.mp3",
-    dramatic: "https://cdn.pixabay.com/audio/2022/03/10/audio_c610232003.mp3",
+    uplifting: "https://gckyfqoiynysfcayqpwm.supabase.co/storage/v1/object/public/Music/Music/atlasaudio-inspiring-uplifting-511864.mp3",
+    calm: "https://gckyfqoiynysfcayqpwm.supabase.co/storage/v1/object/public/Music/Music/leberch-calm-509384.mp3",
+    dramatic: "https://gckyfqoiynysfcayqpwm.supabase.co/storage/v1/object/public/Music/Music/atlasaudio-suspense-dramatic-510580.mp3",
+    background: "https://gckyfqoiynysfcayqpwm.supabase.co/storage/v1/object/public/Music/Music/andriig-background-music-566826.mp3",
+  };
+
+  const MUSIC_LIBRARY: Record<string, { label: string; url: string }[]> = {
+    uplifting: [
+      { label: "Inspiring Uplifting", url: "https://gckyfqoiynysfcayqpwm.supabase.co/storage/v1/object/public/Music/Music/atlasaudio-inspiring-uplifting-511864.mp3" },
+      { label: "Uplifting", url: "https://gckyfqoiynysfcayqpwm.supabase.co/storage/v1/object/public/Music/Music/jonasblakewood-uplifting-562853.mp3" },
+      { label: "Epic Uplifting", url: "https://gckyfqoiynysfcayqpwm.supabase.co/storage/v1/object/public/Music/Music/leberch-epic-uplifting-509714.mp3" },
+    ],
+    calm: [
+      { label: "Calm 1", url: "https://gckyfqoiynysfcayqpwm.supabase.co/storage/v1/object/public/Music/Music/leberch-calm-509384.mp3" },
+      { label: "Calm 2", url: "https://gckyfqoiynysfcayqpwm.supabase.co/storage/v1/object/public/Music/Music/prettyjohn1-calm-537656.mp3" },
+      { label: "Calm 3", url: "https://gckyfqoiynysfcayqpwm.supabase.co/storage/v1/object/public/Music/Music/the_mountain-calm-507994.mp3" },
+    ],
+    dramatic: [
+      { label: "Suspense Dramatic", url: "https://gckyfqoiynysfcayqpwm.supabase.co/storage/v1/object/public/Music/Music/atlasaudio-suspense-dramatic-510580.mp3" },
+      { label: "Sad Dramatic", url: "https://gckyfqoiynysfcayqpwm.supabase.co/storage/v1/object/public/Music/Music/leberch-sad-dramatic-250863.mp3" },
+      { label: "Dramatic 1", url: "https://gckyfqoiynysfcayqpwm.supabase.co/storage/v1/object/public/Music/Music/paulyudin-dramatic-482366.mp3" },
+      { label: "Dramatic Music", url: "https://gckyfqoiynysfcayqpwm.supabase.co/storage/v1/object/public/Music/Music/paulyudin-dramatic-dramatic-music-513008.mp3" },
+      { label: "Dramatic 2", url: "https://gckyfqoiynysfcayqpwm.supabase.co/storage/v1/object/public/Music/Music/prettyjohn1-dramatic-491632.mp3" },
+      { label: "Dramatic Music 2", url: "https://gckyfqoiynysfcayqpwm.supabase.co/storage/v1/object/public/Music/Music/the_mountain-dramatic-dramatic-music-508006.mp3" },
+    ],
+    background: [
+      { label: "Background 1", url: "https://gckyfqoiynysfcayqpwm.supabase.co/storage/v1/object/public/Music/Music/andriig-background-music-566826.mp3" },
+      { label: "Background 2", url: "https://gckyfqoiynysfcayqpwm.supabase.co/storage/v1/object/public/Music/Music/bombinsound-background-music-version-3-560450.mp3" },
+      { label: "Background 3", url: "https://gckyfqoiynysfcayqpwm.supabase.co/storage/v1/object/public/Music/Music/miromaxmusic-music-promotion-no-copyright-513944.mp3" },
+      { label: "Background 4", url: "https://gckyfqoiynysfcayqpwm.supabase.co/storage/v1/object/public/Music/Music/nastelbom-background-music-463062.mp3" },
+      { label: "Background 5", url: "https://gckyfqoiynysfcayqpwm.supabase.co/storage/v1/object/public/Music/Music/the_mountain-background-music-159125.mp3" },
+    ],
   };
   const CAPTION_STYLES: Record<string, Record<string, unknown>> = {
     bold: {

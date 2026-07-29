@@ -38,7 +38,7 @@ async function writeScript(
               content:
                 `Write a punchy ${tone.toLowerCase()} voiceover script for a ${targetSeconds}-second ` +
                 `${format} YouTube video about "${topic}". Open with a strong hook, deliver tight ` +
-                `value, and end with a call to action. This MUST have at least ${Math.max(3, Math.round(targetSeconds / 5))} distinct scenes ` +
+                 `value, and end with a call to action. This MUST have EXACTLY ${Math.max(3, Math.round(targetSeconds / 5))} distinct scenes — no more, no fewer — ` +
                 `(one new scene roughly every 4-5 seconds of narration) so each scene has a matching visual. ` +
                 `Write the ENTIRE script — hook, scenes, and CTA — in ${languageName}. ` +
                 `Label sections like [HOOK], [SCENE 2], [CTA]. No stage directions other than those labels.`,
@@ -146,6 +146,10 @@ export async function POST(request: Request) {
 
   // 3. Move to image generation with fal.ai — one image per actual scene in the script.
   const scenePrompts = parseScenes(script);
+  const targetSceneCount = Math.max(3, Math.round((length === "long" ? 150 : length === "medium" ? 45 : 25) / 5));
+  if (scenePrompts.length > targetSceneCount) {
+    scenePrompts.length = targetSceneCount;
+  }
   const fallbackCount = length === "long" ? 8 : length === "medium" ? 5 : 3;
   const { images, source: imagesSource } = await generateImages({
     topic,

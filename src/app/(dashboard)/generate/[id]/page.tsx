@@ -33,6 +33,12 @@ function parseScenes(text: string): string[] {
   return scenes;
 }
 
+function capScenes(scenes: string[], length: string): string[] {
+  const targetSeconds = length === "long" ? 150 : length === "medium" ? 45 : 25;
+  const targetCount = Math.max(3, Math.round(targetSeconds / 5));
+  return scenes.length > targetCount ? scenes.slice(0, targetCount) : scenes;
+}
+
 function now(): string {
   const d = new Date();
   return d.toLocaleTimeString("en-US", { hour12: false });
@@ -160,7 +166,7 @@ try {
           // Stock video mode: call /api/generate/footage for video clips
           log("Fetching stock footage (video) from Pexels…");
           const footageRes = await postJSON("/api/generate/footage", {
-            sceneTexts: parseScenes(script),
+            sceneTexts: capScenes(parseScenes(script), s.length),
             type: "video",
             topic: s.topic,
             generationMode: s.generationMode,
@@ -174,7 +180,7 @@ try {
           // Stock photo mode: call /api/generate/footage for photos (AI images mixed in later)
           log("Fetching stock photos from Pexels…");
           const footageRes = await postJSON("/api/generate/footage", {
-            sceneTexts: parseScenes(script),
+            sceneTexts: capScenes(parseScenes(script), s.length),
             type: "photo",
             topic: s.topic,
             generationMode: s.generationMode,

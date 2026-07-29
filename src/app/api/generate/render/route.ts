@@ -29,8 +29,12 @@ export async function POST(request: Request) {
     voice?: string;
     videoId?: string;
   };
+  const MUSIC_TRACKS: Record<string, string> = {
+    uplifting: "https://cdn.pixabay.com/audio/2022/03/15/audio_c8e70c3f3d.mp3",
+    calm: "https://cdn.pixabay.com/audio/2022/05/16/audio_1808fbf07a.mp3",
+    dramatic: "https://cdn.pixabay.com/audio/2022/03/10/audio_c610232003.mp3",
+  };
   const seed = uid("render");
-  void music;
 
   // Server-side plan enforcement
   const enforcement = await validateGenerationRequest(videoId, null, generationMode);
@@ -129,6 +133,7 @@ export async function POST(request: Request) {
           ? [
               { type: "voice", text: cleanText, model: "elevenlabs", voice: voice, connection: "elevenlabs-main" },
               { type: "subtitles", language: "auto" },
+              { type: "audio", src: MUSIC_TRACKS[music] ?? MUSIC_TRACKS.uplifting, volume: 0.15, loop: true },
             ]
           : [],
       };

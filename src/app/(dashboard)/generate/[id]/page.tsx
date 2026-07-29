@@ -260,6 +260,7 @@ try {
           script,
           voice: s.voice,
           videoId: video!.id,
+          captionStyle: s.captionStyle,
         };
 
         if (mode === "stock_only") {

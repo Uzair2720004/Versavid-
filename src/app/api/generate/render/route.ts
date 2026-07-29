@@ -18,6 +18,7 @@ export async function POST(request: Request) {
     script = "",
     voice = "21m00Tcm4TlvDq8ikWAM",
     videoId = "",
+    captionStyle = "clean",
   } = body as {
     format?: string;
     clips?: unknown[];
@@ -28,11 +29,59 @@ export async function POST(request: Request) {
     script?: string;
     voice?: string;
     videoId?: string;
+    captionStyle?: string;
   };
   const MUSIC_TRACKS: Record<string, string> = {
     uplifting: "https://cdn.pixabay.com/audio/2022/03/15/audio_c8e70c3f3d.mp3",
     calm: "https://cdn.pixabay.com/audio/2022/05/16/audio_1808fbf07a.mp3",
     dramatic: "https://cdn.pixabay.com/audio/2022/03/10/audio_c610232003.mp3",
+  };
+  const CAPTION_STYLES: Record<string, Record<string, unknown>> = {
+    bold: {
+      style: "classic",
+      "font-size": 110,
+      "outline-width": 8,
+      "outline-color": "#000000",
+      "line-color": "#FFFFFF",
+      "word-color": "#FFFF00",
+      "all-caps": true,
+    },
+    wordbyword: {
+      style: "classic-one-word",
+      "max-words-per-line": 1,
+      "font-size": 130,
+      "word-color": "#FFFF00",
+      "line-color": "#FFFFFF",
+    },
+    clean: {
+      style: "classic",
+      "font-size": 80,
+      "outline-width": 0,
+      "line-color": "#FFFFFF",
+      "word-color": "#FFFFFF",
+    },
+    glow: {
+      style: "classic",
+      "font-size": 100,
+      "word-color": "#00E5FF",
+      "line-color": "#FFFFFF",
+      "shadow-color": "#00E5FF",
+      "shadow-offset": 6,
+      "outline-width": 0,
+    },
+    boxed: {
+      style: "boxed-line",
+      "font-size": 90,
+      "box-color": "#000000",
+      "line-color": "#FFFFFF",
+      "word-color": "#FFFF00",
+    },
+    type: {
+      style: "classic-progressive",
+      "font-size": 90,
+      "line-color": "#FFFFFF",
+      "word-color": "#FFFF00",
+    },
   };
   const seed = uid("render");
 
@@ -132,7 +181,7 @@ export async function POST(request: Request) {
         elements: cleanText
           ? [
               { type: "voice", text: cleanText, model: "elevenlabs", voice: voice, connection: "elevenlabs-main" },
-              { type: "subtitles", language: "auto" },
+              { type: "subtitles", language: "auto", settings: CAPTION_STYLES[captionStyle] ?? CAPTION_STYLES.clean },
               { type: "audio", src: MUSIC_TRACKS[music] ?? MUSIC_TRACKS.uplifting, volume: 0.15, loop: true },
             ]
           : [],

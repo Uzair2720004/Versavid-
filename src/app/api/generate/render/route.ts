@@ -271,7 +271,11 @@ export async function POST(request: Request) {
             if (movie?.status === "done" && movie?.url) {
               // Increment free tier counter for successful renders
               if (enforcement.userId && enforcement.plan === "free") {
-                incrementFreeTierCount(enforcement.userId).catch(console.error);
+                try {
+                  await incrementFreeTierCount(enforcement.userId);
+                } catch (err) {
+                  console.error("Failed to increment free tier count:", err);
+                }
               }
               return Response.json({
                 video_url: movie.url,

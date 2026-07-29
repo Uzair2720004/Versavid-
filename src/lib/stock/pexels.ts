@@ -38,9 +38,37 @@ function extractKeywords(text: string, topic?: string): string[] {
           "why",
           "who",
           "which",
+          "have",
+          "been",
+          "were",
+          "just",
+          "really",
+          "very",
+          "into",
+          "these",
+          "those",
+          "there",
+          "here",
+          "than",
+          "them",
+          "make",
+          "some",
+          "more",
+          "only",
+          "also",
+          "like",
+          "even",
+          "much",
+          "many",
+          "such",
+          "other",
+          "being",
+          "would",
+          "could",
+          "should",
         ].includes(w)
     );
-  const keywords = words.slice(0, 4);
+  const keywords = [...words].sort((a, b) => b.length - a.length).slice(0, 6);
   // If no keywords extracted, fall back to topic or generic terms
   if (keywords.length === 0 && topic) {
     return topic.toLowerCase().split(/\s+/).filter((w) => w.length > 2).slice(0, 4);

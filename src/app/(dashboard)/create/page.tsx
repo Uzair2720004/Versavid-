@@ -32,7 +32,7 @@ export default function CreateVideoPage() {
   const isFreeTier = profile?.plan === 'free';
 
   const stepValid = useMemo(() => {
-    if (step === 1) return selections.topic && selections.format && selections.length && selections.tone;
+    if (step === 1) return selections.topic && selections.format && selections.length && selections.tone && selections.voice && selections.language;
     if (step === 2) {
       if (!selections.generationMode) return false;
       const mode = selections.generationMode;
@@ -40,7 +40,7 @@ export default function CreateVideoPage() {
       if (mode === 'ai_images_plus_ai_video' && !selections.videoStyle) return false;
       return true;
     }
-    if (step === 3) return selections.voice && selections.language && selections.speed && selections.captionStyle;
+    if (step === 3) return selections.speed && selections.captionStyle;
     return true;
   }, [step, selections]);
 

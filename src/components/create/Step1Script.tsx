@@ -1,7 +1,7 @@
 ﻿'use client';
 import { useState, useRef } from 'react';
 import { motion } from 'framer-motion';
-import { Sparkles, Upload, Smartphone, Monitor, FileText, Lock, Mic, Play, Pause } from 'lucide-react';
+import { Sparkles, Upload, FileText, Lock } from 'lucide-react';
 
 interface VoiceOption {
   id: string;
@@ -49,10 +49,21 @@ const lengths = [
   { id: 'long', label: 'Long', duration: '5-10 min', credits: 8, tier: 'paid' as const },
 ];
 const tones = ['Energetic', 'Educational', 'Cinematic', 'Casual', 'Inspirational', 'Humorous', 'Professional', 'Storytelling'];
-const iconMap: Record<string, any> = { Smartphone, Monitor };
+
+const INK = "#EEEEF3";
+const MUTE = "#87869A";
+const FAINT = "#57566B";
+const SURF = "#121218";
+const BORDER = "#212129";
+const BORDER_STRONG = "#2E2E38";
+const ACCENT = "#8A7FFF";
+const ACCENT_DIM = "rgba(138,127,255,0.10)";
+const SIGNAL = "#E8577E";
 
 export default function Step1Script({ selections, update, isFreeTier }: { selections: Record<string, any>; update: (k: string, v: any) => void; isFreeTier: boolean }) {
   const [playingId, setPlayingId] = useState<string | null>(null);
+  const [focused, setFocused] = useState(false);
+  const [toneOpen, setToneOpen] = useState(false);
   const audioRef = useRef<HTMLAudioElement | null>(null);
   const scriptMode = selections.scriptMode || 'ai';
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -92,17 +103,22 @@ export default function Step1Script({ selections, update, isFreeTier }: { select
   return (
     <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -20 }} transition={{ duration: 0.5, ease: [0.16, 1, 0.3, 1] }} className="space-y-8">
       <div>
-        <label className="text-[13px] font-medium text-white mb-3 block">Script source</label>
+        <label className="text-[13px] font-medium mb-3 block" style={{ color: INK }}>Script source</label>
         <div className="grid grid-cols-2 gap-3 max-w-md">
           {[{ mode: 'ai', Icon: Sparkles, title: 'AI Generate', sub: 'From a topic' }, { mode: 'upload', Icon: Upload, title: 'Upload script', sub: '.txt or .docx' }].map(({ mode, Icon, title, sub }) => (
             <button key={mode} onClick={() => update('scriptMode', mode)}
-              className={'flex items-center gap-3 p-4 rounded-xl border transition-all duration-300 ' + (scriptMode === mode ? 'glass-strong border-fuchsia-400/40' : 'bg-[#0a0a0a] border-white/5 hover:border-white/15')}>
-              <div className={'h-9 w-9 rounded-lg flex items-center justify-center ' + (scriptMode === mode ? 'bg-fuchsia-500/20' : 'bg-white/5')}>
-                <Icon className="h-4 w-4 text-fuchsia-400" />
+              className="flex items-center gap-3 p-4 rounded-xl border transition-all duration-300"
+              style={{
+                borderColor: scriptMode === mode ? `${ACCENT}66` : BORDER,
+                background: scriptMode === mode ? ACCENT_DIM : SURF,
+              }}>
+              <div className="h-9 w-9 rounded-lg flex items-center justify-center"
+                style={{ background: scriptMode === mode ? ACCENT_DIM : 'transparent' }}>
+                <Icon className="h-4 w-4" style={{ color: ACCENT }} />
               </div>
               <div className="text-left">
-                <p className="text-[13px] font-medium text-white">{title}</p>
-                <p className="text-[10px] text-[#767D88]">{sub}</p>
+                <p className="text-[13px] font-medium" style={{ color: INK }}>{title}</p>
+                <p className="text-[10px]" style={{ color: MUTE }}>{sub}</p>
               </div>
             </button>
           ))}
@@ -110,11 +126,49 @@ export default function Step1Script({ selections, update, isFreeTier }: { select
       </div>
 
       <div>
-        <label className="text-[13px] font-medium text-white mb-3 block">{scriptMode === 'ai' ? 'Topic' : 'Paste or upload your script'}</label>
+        <label className="text-[13px] font-medium mb-3 block" style={{ color: INK }}>{scriptMode === 'ai' ? 'Topic' : 'Paste or upload your script'}</label>
         {scriptMode === 'ai' ? (
-          <input type="text" value={selections.topic || ''} onChange={(e) => update('topic', e.target.value)}
-            placeholder="e.g. 5 mysterious facts about deep ocean creatures"
-            className="w-full h-12 px-4 rounded-xl bg-white/5 border border-white/10 text-[14px] text-white placeholder:text-[#767D88] focus:outline-none focus:border-fuchsia-400/50 transition-colors" />
+          <div className="relative mb-2">
+            {[
+              "top-0 left-0 border-t border-l",
+              "top-0 right-0 border-t border-r",
+              "bottom-0 left-0 border-b border-l",
+              "bottom-0 right-0 border-b border-r",
+            ].map((pos, i) => (
+              <div
+                key={i}
+                className={`absolute ${pos} w-4 h-4 transition-all duration-300 ease-out pointer-events-none`}
+                style={{
+                  borderColor: focused ? ACCENT : BORDER_STRONG,
+                  opacity: focused ? 1 : 0.7,
+                  transform: focused
+                    ? i === 0
+                      ? "translate(-2px,-2px)"
+                      : i === 1
+                      ? "translate(2px,-2px)"
+                      : i === 2
+                      ? "translate(-2px,2px)"
+                      : "translate(2px,2px)"
+                    : "translate(0,0)",
+                }}
+              />
+            ))}
+            <div className="px-6 py-8">
+              <label className="block text-[11px] font-mono tracking-[0.14em] uppercase mb-3" style={{ color: MUTE }}>
+                What's your video about?
+              </label>
+              <input
+                type="text"
+                value={selections.topic || ''}
+                onChange={(e) => update('topic', e.target.value)}
+                onFocus={() => setFocused(true)}
+                onBlur={() => setFocused(false)}
+                placeholder="Historical places lost to time"
+                className="w-full bg-transparent outline-none text-[28px] leading-tight"
+                style={{ fontFamily: "var(--font-fraunces), Georgia, serif", fontWeight: 500, color: INK }}
+              />
+            </div>
+          </div>
         ) : (
           <div className="space-y-3">
             <textarea
@@ -122,18 +176,24 @@ export default function Step1Script({ selections, update, isFreeTier }: { select
               onChange={(e) => update('topic', e.target.value)}
               placeholder="Paste your script here..."
               rows={6}
-              className="w-full px-4 py-3 rounded-xl bg-white/5 border border-white/10 text-[14px] text-white placeholder:text-[#767D88] focus:outline-none focus:border-fuchsia-400/50 transition-colors resize-none"
+              className="w-full px-4 py-3 rounded-xl border text-[14px] resize-none"
+              style={{
+                background: SURF,
+                borderColor: BORDER,
+                color: INK,
+              }}
             />
             <div
-              className="relative rounded-xl border border-dashed border-white/15 bg-white/[0.02] hover:border-fuchsia-400/30 transition-colors cursor-pointer p-8"
+              className="relative rounded-xl border border-dashed cursor-pointer p-8 transition-colors"
+              style={{ borderColor: BORDER, background: 'rgba(18,18,24,0.5)' }}
               onClick={() => fileInputRef.current?.click()}
             >
               <div className="flex flex-col items-center text-center">
-                <div className="h-12 w-12 rounded-xl bg-white/5 flex items-center justify-center mb-3">
-                  <FileText className="h-5 w-5 text-[#767D88]" />
+                <div className="h-12 w-12 rounded-xl flex items-center justify-center mb-3" style={{ background: SURF }}>
+                  <FileText className="h-5 w-5" style={{ color: MUTE }} />
                 </div>
-                <p className="text-[13px] text-white font-medium">Drop your script here</p>
-                <p className="text-[11px] text-[#767D88] mt-1">or click to browse — .txt, .docx up to 5MB</p>
+                <p className="text-[13px] font-medium" style={{ color: INK }}>Drop your script here</p>
+                <p className="text-[11px] mt-1" style={{ color: MUTE }}>or click to browse — .txt, .docx up to 5MB</p>
               </div>
               <input
                 ref={fileInputRef}
@@ -151,71 +211,110 @@ export default function Step1Script({ selections, update, isFreeTier }: { select
       </div>
 
       <div>
-        <label className="text-[13px] font-medium text-white mb-3 block">Format</label>
-        <div className="grid grid-cols-2 gap-3 max-w-md">
+        <label className="text-[13px] font-medium mb-3 block" style={{ color: INK }}>Format</label>
+        <div className="flex items-center gap-2 px-1">
           {formats.map((f) => {
-            const Icon = iconMap[f.icon];
             const isActive = selections.format === f.id;
             return (
               <button key={f.id} onClick={() => update('format', f.id)}
-                className={'relative p-4 rounded-xl border text-left transition-all duration-300 overflow-hidden ' + (isActive ? 'glass-strong border-fuchsia-400/40' : 'bg-[#0a0a0a] border-white/5 hover:border-white/15')}>
-                {isActive && <div className="absolute inset-0 bg-gradient-to-br from-fuchsia-500/10 to-purple-600/5" />}
-                <div className="relative flex items-center gap-3">
-                  <Icon className="h-5 w-5 text-fuchsia-400" />
-                  <div>
-                    <p className="text-[13px] font-medium text-white">{f.label}</p>
-                    <p className="text-[10px] text-[#767D88]">{f.ratio} · {f.platform}</p>
-                  </div>
-                </div>
+                className="px-3 py-1.5 text-[12px] rounded-md border transition-colors duration-200"
+                style={{
+                  borderColor: isActive ? BORDER_STRONG : BORDER,
+                  color: isActive ? INK : FAINT,
+                  background: isActive ? SURF : 'transparent',
+                }}>
+                {f.ratio}
               </button>
             );
           })}
+          <span className="text-[11px] ml-1" style={{ color: FAINT }}>
+            {selections.format === 'vertical' ? 'Shorts / Reels' : 'Long-form'}
+          </span>
         </div>
       </div>
 
-<div>
-        <label className="text-[13px] font-medium text-white mb-3 block">Length</label>
+      <div>
+        <label className="text-[13px] font-medium mb-3 block" style={{ color: INK }}>Length</label>
         <div className="flex flex-wrap gap-2">
           {lengths.map((l) => {
             const isActive = selections.length === l.label;
             const isLocked = isFreeTier && l.tier === 'paid';
             return (
               <button key={l.id} onClick={() => !isLocked && (update('length', l.label), update('lengthCredits', l.credits))} disabled={isLocked}
-                className={'relative px-4 py-2.5 rounded-lg text-[12px] font-medium transition-all duration-300 ' + 
-                  (isActive ? 'bg-gradient-to-r from-fuchsia-500 to-purple-600 text-white' : 
-                    isLocked ? 'bg-white/3 text-white/30 cursor-not-allowed' 
-                    : 'bg-white/5 text-[#a8aeb8] hover:bg-white/10 hover:text-white')}>
-                {isLocked && <Lock className="absolute -top-2 -right-2 h-3 w-3 text-amber-400" />}
-                {l.label}<span className="ml-1.5 text-[10px] opacity-60">{l.duration}</span>
-                {isLocked && <span className="block text-[9px] text-amber-400 mt-1">Upgrade to unlock</span>}
+                className="relative px-4 py-2.5 rounded-lg text-[12px] font-medium transition-all duration-300 border"
+                style={{
+                  borderColor: isActive ? ACCENT : BORDER,
+                  background: isActive ? ACCENT : 'transparent',
+                  color: isActive ? '#0A0A0F' : isLocked ? FAINT : MUTE,
+                  cursor: isLocked ? 'not-allowed' : 'pointer',
+                }}>
+                {isLocked && <Lock className="absolute -top-2 -right-2 h-3 w-3" style={{ color: SIGNAL }} />}
+                {l.label}<span className="ml-1.5 text-[10px]" style={{ opacity: 0.6 }}>{l.duration}</span>
+                {isLocked && <span className="block text-[9px] mt-1" style={{ color: SIGNAL }}>Upgrade to unlock</span>}
               </button>
             );
           })}
         </div>
       </div>
 
-      <div>
-        <label className="text-[13px] font-medium text-white mb-3 block">Tone</label>
-        <div className="flex flex-wrap gap-2">
-          {tones.map((t) => {
-            const isActive = selections.tone === t;
-            return (
-              <button key={t} onClick={() => update('tone', t)}
-                className={'px-4 py-2.5 rounded-lg text-[12px] font-medium transition-all duration-300 ' + (isActive ? 'bg-gradient-to-r from-fuchsia-500 to-purple-600 text-white' : 'bg-white/5 text-[#a8aeb8] hover:bg-white/10 hover:text-white')}>
-                {t}
-              </button>
-            );
-          })}
+      <button
+        onClick={() => setToneOpen((o) => !o)}
+        className="flex items-center gap-2 text-[13px] transition-colors"
+        style={{ color: MUTE }}
+      >
+        <svg
+          width="12"
+          height="12"
+          viewBox="0 0 12 12"
+          className="transition-transform duration-300"
+          style={{ transform: toneOpen ? "rotate(180deg)" : "rotate(0deg)" }}
+        >
+          <path d="M2 4l4 4 4-4" stroke="currentColor" strokeWidth="1.4" fill="none" />
+        </svg>
+        Customize tone
+      </button>
+
+      <div
+        className="overflow-hidden transition-all duration-400 ease-out"
+        style={{ maxHeight: toneOpen ? "200px" : "0px", opacity: toneOpen ? 1 : 0 }}
+      >
+        <div className="pt-6">
+          <div className="flex flex-wrap gap-2">
+            {tones.map((t, i) => {
+              const isActive = selections.tone === t;
+              return (
+                <button key={t} onClick={() => update('tone', t)}
+                  className="px-3.5 py-1.5 rounded-full text-[13px] border transition-all duration-300"
+                  style={{
+                    borderColor: isActive ? ACCENT : BORDER,
+                    background: isActive ? ACCENT_DIM : "transparent",
+                    color: isActive ? INK : MUTE,
+                    transitionDelay: toneOpen ? `${i * 40}ms` : "0ms",
+                  }}>
+                  {t}
+                </button>
+              );
+            })}
+          </div>
         </div>
       </div>
 
-      <div>
-        <label className="text-[13px] font-medium text-white/80 mb-3 block">Language</label>
+      <div className="mb-8">
+        <p className="text-[11px] font-mono tracking-[0.14em] uppercase mb-3 flex items-center gap-2" style={{ color: MUTE }}>
+          Language
+          <span className="text-[10px] normal-case tracking-normal" style={{ color: SIGNAL }}>required</span>
+        </p>
         <div className="flex flex-wrap gap-2">
           {languages.map((lang) => {
             const isActive = activeLanguage === lang;
             return (
-              <button key={lang} onClick={() => update('language', lang)} className={'px-4 py-2.5 rounded-lg text-[12px] font-medium transition-all duration-300 ' + (isActive ? 'bg-gradient-to-r from-fuchsia-500 to-purple-600 text-white' : 'bg-white/5 text-[#a8aeb8] hover:bg-white/10 hover:text-white')}>
+              <button key={lang} onClick={() => update('language', lang)}
+                className="px-3.5 py-1.5 rounded-full text-[13px] border transition-colors duration-200"
+                style={{
+                  borderColor: isActive ? ACCENT : BORDER,
+                  background: isActive ? ACCENT_DIM : "transparent",
+                  color: isActive ? INK : MUTE,
+                }}>
                 {lang}
               </button>
             );
@@ -223,9 +322,12 @@ export default function Step1Script({ selections, update, isFreeTier }: { select
         </div>
       </div>
 
-      <div>
-        <label className="text-[13px] font-medium text-white block mb-2">Voice</label>
-        <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
+      <div className="mb-6">
+        <p className="text-[11px] font-mono tracking-[0.14em] uppercase mb-3 flex items-center gap-2" style={{ color: MUTE }}>
+          Voice
+          <span className="text-[10px] normal-case tracking-normal" style={{ color: SIGNAL }}>required</span>
+        </p>
+        <div className="space-y-2">
           {filteredVoices.map((v) => {
             const isActive = selections.voice === v.id;
             const isPlaying = playingId === v.id;
@@ -236,22 +338,45 @@ export default function Step1Script({ selections, update, isFreeTier }: { select
                 tabIndex={0}
                 onClick={() => update('voice', v.id)}
                 onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') update('voice', v.id); }}
-                className={'relative p-4 rounded-xl border text-left transition-all duration-300 overflow-hidden cursor-pointer ' + (isActive ? 'glass-strong border-fuchsia-400/40' : 'bg-[#0a0a0a] border-white/5 hover:border-white/15')}
+                className="flex items-center justify-between px-4 py-2.5 rounded-lg border cursor-pointer transition-colors duration-200"
+                style={{
+                  borderColor: isActive ? ACCENT : BORDER,
+                  background: isActive ? ACCENT_DIM : SURF,
+                }}
               >
-                {isActive && <div className="absolute inset-0 bg-gradient-to-br from-fuchsia-500/10 to-purple-600/5" />}
-                <div className="relative">
-                  <div className="flex items-center gap-2 mb-2">
-                    <div className={'h-8 w-8 rounded-full flex items-center justify-center ' + (isActive ? 'bg-gradient-to-br from-fuchsia-500 to-purple-600' : 'bg-white/5')}>
-                      <Mic className="h-3.5 w-3.5 text-white" />
-                    </div>
-                    <button onClick={(e) => togglePreview(e, v)} className="ml-auto h-6 w-6 rounded-full flex items-center justify-center bg-white/10 hover:bg-white/20 transition-colors" aria-label={isPlaying ? 'Pause preview' : 'Play preview'}>
-                      {isPlaying ? <Pause className="h-3 w-3 text-fuchsia-400" /> : <Play className="h-3 w-3 text-fuchsia-400" />}
-                    </button>
+                <div className="flex items-center gap-3">
+                  <button
+                    onClick={(e) => { togglePreview(e, v); }}
+                    className="w-7 h-7 rounded-full flex items-center justify-center border shrink-0"
+                    style={{ borderColor: BORDER_STRONG, color: INK }}
+                  >
+                    {isPlaying ? (
+                      <svg width="10" height="10" viewBox="0 0 10 10">
+                        <rect x="1" y="1" width="3" height="8" fill="currentColor" />
+                        <rect x="6" y="1" width="3" height="8" fill="currentColor" />
+                      </svg>
+                    ) : (
+                      <svg width="10" height="10" viewBox="0 0 10 10">
+                        <path d="M1 1l8 4-8 4z" fill="currentColor" />
+                      </svg>
+                    )}
+                  </button>
+                  <div>
+                    <p className="text-[13px]" style={{ color: INK }}>{v.name}</p>
+                    <p className="text-[11px]" style={{ color: FAINT }}>{v.description}</p>
                   </div>
-                  <p className="text-[13px] font-medium text-white">{v.name}</p>
-                  <p className="text-[10px] text-[#767D88] mt-0.5 leading-[1.3]">{v.description}</p>
-                  <p className="text-[9px] text-white/30 mt-1.5">{v.gender}</p>
                 </div>
+                {isPlaying && (
+                  <div className="flex items-center gap-[2px] h-4">
+                    {[3, 8, 5, 10, 4].map((h, i) => (
+                      <div
+                        key={i}
+                        className="w-[2px] rounded-full animate-pulse"
+                        style={{ height: `${h}px`, background: SIGNAL, animationDelay: `${i * 100}ms` }}
+                      />
+                    ))}
+                  </div>
+                )}
               </div>
             );
           })}

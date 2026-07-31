@@ -3,7 +3,7 @@ import { useState, useMemo } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { ArrowLeft, ArrowRight, Sparkles, Loader2, Check, AlertCircle } from 'lucide-react';
 import { Topbar } from '@/components/dashboard/Topbar';
-import AmbientField from '@/components/dashboard/AmbientField';
+import AmbientBackground from '@/components/AmbientBackground';
 import StepIndicator from '@/components/create/StepIndicator';
 import Step1Script from '@/components/create/Step1Script';
 import Step2Media from '@/components/create/Step2Media';
@@ -53,9 +53,6 @@ export default function CreateVideoPage() {
   if (!ready || !profile) {
     return (
       <div className="relative min-h-screen bg-black flex">
-        <div className="fixed inset-0 z-0 pointer-events-none">
-          <AmbientField variant="mixed" />
-        </div>
         <div className="relative z-10 flex w-full">
           <div className="flex-1 min-w-0 flex flex-col">
             <Topbar />
@@ -133,9 +130,7 @@ export default function CreateVideoPage() {
 
   return (
     <div className="relative min-h-screen bg-black flex">
-      <div className="fixed inset-0 z-0 pointer-events-none">
-        <AmbientField variant="mixed" />
-      </div>
+      <AmbientBackground />
       <div className="relative z-10 flex w-full">
         <div className="flex-1 min-w-0 flex flex-col">
           <Topbar />

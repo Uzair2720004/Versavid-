@@ -1,8 +1,11 @@
 ﻿'use client';
-import { useRef } from 'react';
+import { Suspense, useRef } from 'react';
+import dynamic from 'next/dynamic';
 import { motion, useMotionValue, useSpring, useTransform, useScroll } from 'framer-motion';
 import { Play, Sparkles, ArrowRight } from 'lucide-react';
 import Link from 'next/link';
+
+const HeroSwarm = dynamic(() => import('@/components/landing/HeroSwarm'), { ssr: false });
 
 function HolographicUI() {
   const ref = useRef<HTMLDivElement>(null);
@@ -107,6 +110,11 @@ export default function Hero() {
         <div className="absolute inset-0 bg-gradient-to-b from-black/70 via-black/40 to-black" />
         <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_center,transparent_30%,black_95%)]" />
       </motion.div>
+      <Suspense fallback={null}>
+        <div className="absolute inset-0 z-0 pointer-events-none">
+          <HeroSwarm />
+        </div>
+      </Suspense>
       <motion.div style={{ opacity: contentOpacity, y: contentY }} className="relative z-10 max-w-[1400px] mx-auto px-6 lg:px-10 pt-28 pb-24 min-h-screen flex flex-col items-center justify-center text-center">
         <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.7, ease: [0.16, 1, 0.3, 1] }} className="glass rounded-full px-4 py-1.5 mb-8 flex items-center gap-2 text-[12px] text-white/70">
           <span className="h-1.5 w-1.5 rounded-full bg-cyan-400 animate-pulse" />

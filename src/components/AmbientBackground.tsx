@@ -15,7 +15,7 @@ export default function AmbientBackground() {
     let height = (canvas.height = window.innerHeight);
 
     const COLORS = ['138,127,255', '232,87,126']; // violet, rose (rgb triplets)
-    const COUNT = 45;
+    const COUNT = 90;
     const particles = Array.from({ length: COUNT }, () => ({
       x: Math.random() * width,
       y: Math.random() * height,
@@ -23,7 +23,7 @@ export default function AmbientBackground() {
       vx: (Math.random() - 0.5) * 0.08,
       vy: (Math.random() - 0.5) * 0.08,
       color: COLORS[Math.floor(Math.random() * COLORS.length)],
-      alpha: Math.random() * 0.25 + 0.05,
+      alpha: Math.random() * 0.35 + 0.15,
     }));
 
     let raf: number;

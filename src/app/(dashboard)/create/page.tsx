@@ -21,7 +21,7 @@ export default function CreateVideoPage() {
   const [generating, setGenerating] = useState(false);
   const [done, setDone] = useState(false);
   const [limitError, setLimitError] = useState<string | null>(null);
-  const [selections, setSelections] = useState<Record<string, any>>({ scriptMode: 'ai', lengthCredits: 0, language: 'English' });
+  const [selections, setSelections] = useState<Record<string, any>>({ scriptMode: 'ai', lengthCredits: 0, language: 'English', tone: 'Energetic' });
   const router = useRouter();
   const { addVideo, profile, updateProfile, ready } = useApp();
 
@@ -32,7 +32,7 @@ export default function CreateVideoPage() {
   const isFreeTier = profile?.plan === 'free';
 
   const stepValid = useMemo(() => {
-    if (step === 1) return selections.topic && selections.format && selections.length && selections.tone && selections.voice && selections.language;
+    if (step === 1) return selections.topic && selections.format && selections.length && selections.voice && selections.language;
     if (step === 2) {
       if (!selections.generationMode) return false;
       const mode = selections.generationMode;
@@ -45,7 +45,7 @@ export default function CreateVideoPage() {
   }, [step, selections]);
 
   const canGenerate = useMemo(() => {
-    return selections.topic && selections.format && selections.length && selections.tone &&
+    return selections.topic && selections.format && selections.length &&
       selections.generationMode && selections.voice && selections.language && selections.speed && selections.captionStyle;
   }, [selections]);
 

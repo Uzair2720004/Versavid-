@@ -34,7 +34,7 @@ const ParticleSwarm = () => {
   const material = useMemo(() => new THREE.MeshBasicMaterial({ color: 0xffffff }) as UniformedMaterial, []);
   const geometry = useMemo(() => new THREE.TetrahedronGeometry(0.25), []);
 
-  const PARAMS = useMemo(() => ({"spread":0.45,"reach":80,"haze":1.2,"flicker":0.25,"warmth":0.09,"drift":0.6}), []);
+  const PARAMS = useMemo(() => ({"spread":0.45,"reach":70,"haze":1.2,"flicker":0.25,"warmth":0.09,"drift":0.6}), []);
   const addControl = (id: string, l: number | string, min: number, max: number, val: number) => {
       return PARAMS[id as keyof typeof PARAMS] !== undefined ? PARAMS[id as keyof typeof PARAMS] : val;
   };
@@ -61,6 +61,7 @@ const ParticleSwarm = () => {
 
         const apexY = reach * 0.5;
         const floorY = -reach * 0.5;
+        const coreRaise = reach * 0.18;
 
         const s1 = Math.sin(i * 12.9898 + 1.0) * 43758.5453;
         const r1 = s1 - Math.floor(s1);
@@ -79,7 +80,7 @@ const ParticleSwarm = () => {
 
         if (i === 0) {
         setInfo("Lamp Light", "A warm filament, a volumetric cone of light, floating dust motes and the pool it casts on the floor.");
-        annotate("filament", new THREE.Vector3(0, apexY - reach * 0.06, 0), "Filament");
+        annotate("filament", new THREE.Vector3(0, apexY - reach * 0.06 + coreRaise, 0), "Filament");
         annotate("pool", new THREE.Vector3(0, floorY, 0), "Pool of Light");
         }
 
@@ -89,13 +90,13 @@ const ParticleSwarm = () => {
         const rr = Math.sqrt(Math.max(0.0001, 1 - yy * yy));
         const a = gold * i + time * 0.4;
         const rad = reach * 0.035 * (1 + 0.06 * Math.sin(time * 3.0 + i));
-        target.set(Math.cos(a) * rr * rad, apexY - reach * 0.06 + yy * rad, Math.sin(a) * rr * rad);
+        target.set(Math.cos(a) * rr * rad, apexY - reach * 0.06 + coreRaise + yy * rad, Math.sin(a) * rr * rad);
         color.setHSL(warmth + 0.03, Math.max(0, 0.35 - 0.2 * r1), Math.max(0, Math.min(1, 0.92 * flick)));
         } else if (i < nShade) {
         const f = (i - nBulb) / Math.max(1, nShade - nBulb);
         const a = gold * i;
         const rad = reach * (0.03 + 0.14 * f);
-        const y = apexY + reach * 0.10 - f * reach * 0.14;
+        const y = apexY + reach * 0.10 - f * reach * 0.14 + coreRaise;
         const rim = f * f * f;
         target.set(Math.cos(a) * rad, y, Math.sin(a) * rad);
         color.setHSL(warmth + 0.01, Math.min(1, 0.1 + 0.5 * rim), Math.max(0, Math.min(1, (0.05 + 0.55 * rim) * flick)));
@@ -121,7 +122,7 @@ const ParticleSwarm = () => {
         const rad = u * reach * spread * 1.02;
         const b = Math.pow(Math.max(0, 1 - u), 1.8);
         target.set(Math.cos(a) * rad, floorY + 0.4 * Math.sin(time * 1.2 + rad * 0.2), Math.sin(a) * rad);
-        color.setHSL(warmth + 0.03 * b, Math.max(0, Math.min(1, 0.75 - 0.35 * b)), Math.max(0, Math.min(1, (0.04 + 0.7 * b) * flick)));
+        color.setHSL(warmth + 0.03 * b, Math.max(0, Math.min(1, 0.75 - 0.35 * b)), Math.max(0, Math.min(1, (0.08 + 0.75 * b) * flick)));
         } else {
         const span = reach * 0.9;
         let by = r3 + time * 0.02 * drift;
@@ -134,7 +135,7 @@ const ParticleSwarm = () => {
         const d = Math.sqrt(x * x + z * z) / coneR;
         const lit = Math.max(0, 1 - d * d);
         target.set(x, y, z);
-        color.setHSL(warmth + 0.02, 0.6, Math.max(0, Math.min(1, (0.015 + 0.85 * lit * (1 - depth * 0.7)) * flick)));
+        color.setHSL(warmth + 0.02, 0.6, Math.max(0, Math.min(1, (0.05 + 0.85 * lit * (1 - depth * 0.7)) * flick)));
         }
         // USER CODE END
 
@@ -161,7 +162,7 @@ export default function HeroSwarm() {
         <ParticleSwarm />
         <OrbitControls autoRotate={true} enableZoom={false} enablePan={false} enableRotate={false} />
         <Effects disableGamma>
-            <unrealBloomPass threshold={0} strength={1.8} radius={0.4} />
+            <unrealBloomPass threshold={0} strength={1.3} radius={0.4} />
         </Effects>
       </Canvas>
     </div>

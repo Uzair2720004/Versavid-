@@ -4,69 +4,85 @@ import React, { useRef, useMemo, useState, useEffect } from 'react';
 import { Canvas, useFrame } from '@react-three/fiber';
 import * as THREE from 'three';
 
-const ACCENT = '#8A7FFF';
-const SIGNAL = '#E8577E';
+function makeDotTexture() {
+  const size = 64;
+  const canvas = document.createElement('canvas');
+  canvas.width = size;
+  canvas.height = size;
+  const ctx = canvas.getContext('2d')!;
+  const gradient = ctx.createRadialGradient(size / 2, size / 2, 0, size / 2, size / 2, size / 2);
+  gradient.addColorStop(0, 'rgba(255,255,255,1)');
+  gradient.addColorStop(0.4, 'rgba(255,255,255,0.5)');
+  gradient.addColorStop(1, 'rgba(255,255,255,0)');
+  ctx.fillStyle = gradient;
+  ctx.fillRect(0, 0, size, size);
+  const tex = new THREE.CanvasTexture(canvas);
+  return tex;
+}
 
-function Cloud({ count, hue }: { count: number; hue: number }) {
-  const meshRef = useRef<THREE.InstancedMesh>(null);
-  const dummy = useMemo(() => new THREE.Object3D(), []);
-  const color = useMemo(() => new THREE.Color(), []);
-  const geometry = useMemo(() => new THREE.TetrahedronGeometry(0.18), []);
-  const material = useMemo(() => new THREE.MeshBasicMaterial({ color: 0xffffff }), []);
+function GlowCloud({ count, hueA, hueB }: { count: number; hueA: number; hueB: number }) {
+  const pointsRef = useRef<THREE.Points>(null);
+  const texture = useMemo(() => makeDotTexture(), []);
 
-  const seeds = useMemo(() => {
-    const arr: { r: number; theta: number; phi: number; speed: number }[] = [];
+  const { positions, colors } = useMemo(() => {
+    const positions = new Float32Array(count * 3);
+    const colors = new Float32Array(count * 3);
+    const color = new THREE.Color();
+    const gaussian = () => (Math.random() + Math.random() + Math.random() - 1.5) / 1.5;
     for (let i = 0; i < count; i++) {
-      arr.push({
-        r: 1.2 + Math.random() * 1.4,
-        theta: Math.random() * Math.PI * 2,
-        phi: Math.acos(2 * Math.random() - 1),
-        speed: 0.15 + Math.random() * 0.25,
-      });
+      positions[i * 3] = gaussian() * 1.7;
+      positions[i * 3 + 1] = gaussian() * 1.7;
+      positions[i * 3 + 2] = gaussian() * 1.7;
+      const t = Math.random();
+      color.setHSL(hueA + (hueB - hueA) * t, 0.7, 0.62 + Math.random() * 0.15);
+      colors[i * 3] = color.r;
+      colors[i * 3 + 1] = color.g;
+      colors[i * 3 + 2] = color.b;
     }
-    return arr;
-  }, [count]);
+    return { positions, colors };
+  }, [count, hueA, hueB]);
 
   useFrame((state) => {
-    if (!meshRef.current) return;
+    if (!pointsRef.current) return;
     const t = state.clock.getElapsedTime();
-    for (let i = 0; i < count; i++) {
-      const s = seeds[i];
-      const theta = s.theta + t * s.speed * 0.3;
-      const x = s.r * Math.sin(s.phi) * Math.cos(theta);
-      const y = s.r * Math.sin(s.phi) * Math.sin(theta) * 0.6;
-      const z = s.r * Math.cos(s.phi);
-      dummy.position.set(x, y, z);
-      dummy.rotation.set(t * 0.2 + i, t * 0.15, 0);
-      const scale = 0.7 + 0.3 * Math.sin(t * 0.8 + i);
-      dummy.scale.setScalar(scale);
-      dummy.updateMatrix();
-      meshRef.current.setMatrixAt(i, dummy.matrix);
-      const l = 0.55 + 0.25 * Math.sin(t * 1.3 + i * 2.1);
-      color.setHSL(hue, 0.65, Math.max(0, Math.min(1, l)));
-      meshRef.current.setColorAt(i, color);
-    }
-    meshRef.current.instanceMatrix.needsUpdate = true;
-    if (meshRef.current.instanceColor) meshRef.current.instanceColor.needsUpdate = true;
-    meshRef.current.rotation.y = t * 0.08;
+    pointsRef.current.rotation.y = t * 0.07;
+    pointsRef.current.rotation.x = Math.sin(t * 0.15) * 0.12;
   });
 
-  return <instancedMesh ref={meshRef} args={[geometry, material, count]} />;
+  return (
+    <points ref={pointsRef}>
+      <bufferGeometry>
+        <bufferAttribute attach="attributes-position" args={[positions, 3]} />
+        <bufferAttribute attach="attributes-color" args={[colors, 3]} />
+      </bufferGeometry>
+      <pointsMaterial
+        size={0.24}
+        map={texture}
+        vertexColors
+        transparent
+        opacity={0.9}
+        depthWrite={false}
+        blending={THREE.AdditiveBlending}
+        sizeAttenuation
+      />
+    </points>
+  );
 }
 
 /**
- * Lightweight per-row companion visual. Lazy-mounts only when scrolled
- * into view (IntersectionObserver) and unmounts when scrolled well past,
- * so we never run more than ~1-2 of these Canvases at once. Do NOT add
- * bloom or OrbitControls here — kept intentionally cheap since this
- * renders up to 5 times down the Features section.
+ * Lightweight per-row companion visual. Uses additive-blended glow points
+ * instead of solid geometry — cheap (single draw call, no lighting, no
+ * bloom pass needed) and reads as a soft luminous cloud rather than hard
+ * confetti. Lazy-mounts only when scrolled into view.
  */
 export default function ParticleCompanion({
-  count = 260,
-  hue = 0.7, // 0.7 ~ violet (ACCENT), 0.93 ~ rose (SIGNAL)
+  count = 320,
+  hueA = 0.7,
+  hueB = 0.93,
 }: {
   count?: number;
-  hue?: number;
+  hueA?: number;
+  hueB?: number;
 }) {
   const containerRef = useRef<HTMLDivElement>(null);
   const [visible, setVisible] = useState(false);
@@ -86,7 +102,7 @@ export default function ParticleCompanion({
     <div ref={containerRef} style={{ width: '100%', height: '100%' }} aria-hidden="true">
       {visible && (
         <Canvas camera={{ position: [0, 0, 4], fov: 45 }} dpr={[1, 1.5]}>
-          <Cloud count={count} hue={hue} />
+          <GlowCloud count={count} hueA={hueA} hueB={hueB} />
         </Canvas>
       )}
     </div>

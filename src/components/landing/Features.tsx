@@ -2,6 +2,7 @@
 import { motion } from 'framer-motion';
 import type { ReactElement } from 'react';
 import ParticleCompanion from './ParticleCompanion';
+import { ScriptTypeVisual, WaveformVisual, CaptionRevealVisual, AspectMorphVisual } from './MicroVisuals';
 
 const INK = '#EEEEF3';
 const MUTE = '#87869A';
@@ -63,6 +64,14 @@ const features = [
   { index: '05', title: 'Shorts & Standard Support', description: 'Generate YouTube Shorts (9:16) and standard videos (16:9) from the same topic automatically.', bullets: ['YouTube Shorts (9:16)', 'Standard long-form (16:9)', 'Auto-reframe & reformat'], hue: 0.7 },
 ];
 
+const companionVisuals: ((feature: typeof features[number]) => React.ReactElement)[] = [
+  () => <ScriptTypeVisual />,
+  (f) => <ParticleCompanion count={320} hueA={f.hue} hueB={f.hue + 0.08} />,
+  () => <WaveformVisual />,
+  () => <CaptionRevealVisual />,
+  () => <AspectMorphVisual />,
+];
+
 const cornerPositions = [
   'top-0 left-0 border-t border-l',
   'top-0 right-0 border-t border-r',
@@ -106,7 +115,7 @@ function FeatureRow({ feature, idx }: { feature: typeof features[number]; idx: n
       </div>
 
       <div className="hidden lg:block h-[160px] w-[160px] justify-self-end self-center opacity-70">
-        <ParticleCompanion count={260} hue={feature.hue} />
+        {companionVisuals[idx](feature)}
       </div>
     </motion.div>
   );

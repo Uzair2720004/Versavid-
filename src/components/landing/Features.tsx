@@ -1,6 +1,7 @@
 ﻿'use client';
 import { motion } from 'framer-motion';
 import type { ReactElement } from 'react';
+import ParticleCompanion from './ParticleCompanion';
 
 const INK = '#EEEEF3';
 const MUTE = '#87869A';
@@ -55,11 +56,11 @@ const glyphs: Glyph[] = [
 ];
 
 const features = [
-  { index: '01', title: 'AI Script Generation', description: 'Type any topic and Versavid writes a complete, engaging video script optimized for retention.', bullets: ['Topic-to-script AI', 'Niche-aware writing', 'Retention-optimized hooks'] },
-  { index: '02', title: 'AI Images & Video Clips', description: 'Versavid generates matching images and video clips for each scene. No stock footage needed.', bullets: ['AI-generated B-roll', 'Scene-matched visuals', 'No stock licensing needed'] },
-  { index: '03', title: 'AI Voiceover', description: 'Turn your script into a lifelike voiceover with a single click. Multiple voices and languages.', bullets: ['Lifelike AI voices', 'Multiple languages', 'Consistent brand voice'] },
-  { index: '04', title: 'Auto Captions', description: 'Automatic perfectly-timed captions. Word-by-word subtitles that sync flawlessly to your voiceover.', bullets: ['Word-by-word sync', 'Boosts engagement', 'Multiple caption styles'] },
-  { index: '05', title: 'Shorts & Standard Support', description: 'Generate YouTube Shorts (9:16) and standard videos (16:9) from the same topic automatically.', bullets: ['YouTube Shorts (9:16)', 'Standard long-form (16:9)', 'Auto-reframe & reformat'] },
+  { index: '01', title: 'AI Script Generation', description: 'Type any topic and Versavid writes a complete, engaging video script optimized for retention.', bullets: ['Topic-to-script AI', 'Niche-aware writing', 'Retention-optimized hooks'], hue: 0.7 },
+  { index: '02', title: 'AI Images & Video Clips', description: 'Versavid generates matching images and video clips for each scene. No stock footage needed.', bullets: ['AI-generated B-roll', 'Scene-matched visuals', 'No stock licensing needed'], hue: 0.93 },
+  { index: '03', title: 'AI Voiceover', description: 'Turn your script into a lifelike voiceover with a single click. Multiple voices and languages.', bullets: ['Lifelike AI voices', 'Multiple languages', 'Consistent brand voice'], hue: 0.7 },
+  { index: '04', title: 'Auto Captions', description: 'Automatic perfectly-timed captions. Word-by-word subtitles that sync flawlessly to your voiceover.', bullets: ['Word-by-word sync', 'Boosts engagement', 'Multiple caption styles'], hue: 0.93 },
+  { index: '05', title: 'Shorts & Standard Support', description: 'Generate YouTube Shorts (9:16) and standard videos (16:9) from the same topic automatically.', bullets: ['YouTube Shorts (9:16)', 'Standard long-form (16:9)', 'Auto-reframe & reformat'], hue: 0.7 },
 ];
 
 const cornerPositions = [
@@ -77,7 +78,7 @@ function FeatureRow({ feature, idx }: { feature: typeof features[number]; idx: n
       whileInView={{ opacity: 1, y: 0 }}
       viewport={{ once: true, margin: '-15%' }}
       transition={{ duration: 0.8, ease: [0.16, 1, 0.3, 1] }}
-      className="flex flex-col gap-5 py-10 sm:grid sm:grid-cols-[90px_1fr] sm:gap-8"
+      className="flex flex-col gap-5 py-10 sm:grid sm:grid-cols-[90px_1fr] lg:grid-cols-[90px_1fr_160px] sm:gap-8"
       style={{ borderTop: `1px solid ${BORDER}` }}
     >
       <div className="relative h-16 w-16 shrink-0">
@@ -102,6 +103,10 @@ function FeatureRow({ feature, idx }: { feature: typeof features[number]; idx: n
             <span key={b} className="rounded-full font-mono text-[11px] px-2.5 py-1" style={{ border: `1px solid ${BORDER}`, color: FAINT }}>{b}</span>
           ))}
         </div>
+      </div>
+
+      <div className="hidden lg:block h-[160px] w-[160px] justify-self-end self-center opacity-70">
+        <ParticleCompanion count={260} hue={feature.hue} />
       </div>
     </motion.div>
   );

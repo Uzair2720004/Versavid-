@@ -1,18 +1,24 @@
 ﻿'use client';
-import { motion, useScroll, useTransform } from 'framer-motion';
-import { useRef } from 'react';
+import { motion } from 'framer-motion';
 import { ArrowRight } from 'lucide-react';
 import Link from 'next/link';
 export default function FinalCTA() {
-  const ref = useRef<HTMLElement>(null);
-  const { scrollYProgress } = useScroll({ target: ref, offset: ['start end', 'end start'] });
-  const bgY = useTransform(scrollYProgress, [0, 1], ['0%', '25%']);
   return (
-    <section id="cta" ref={ref} className="relative min-h-[90vh] w-full overflow-hidden bg-black flex items-center justify-center">
-      <motion.div style={{ y: bgY }} className="absolute inset-0 z-0">
-        <img src="/images/cta-bg.jpg" alt="" className="h-full w-full object-cover opacity-40" />
-        <div className="absolute inset-0 bg-gradient-to-b from-black via-black/50 to-black" />
-      </motion.div>
+    <section id="cta" className="relative min-h-[90vh] w-full overflow-hidden bg-[#0A0A0F] flex items-center justify-center">
+      <video
+        autoPlay
+        muted
+        loop
+        playsInline
+        className="pointer-events-none absolute inset-0 h-full w-full object-cover"
+        style={{ opacity: 0.4 }}
+      >
+        <source src="https://videos.pexels.com/video-files/36380551/15428477_1920_1080_30fps.mp4" type="video/mp4" />
+      </video>
+      <div
+        className="pointer-events-none absolute inset-0"
+        style={{ background: 'radial-gradient(ellipse 70% 60% at 50% 50%, transparent 0%, #0A0A0F 85%)' }}
+      />
       <div className="relative z-10 max-w-3xl mx-auto px-6 text-center">
         <motion.div initial={{ opacity: 0, y: 30 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }} transition={{ duration: 0.9, ease: [0.16, 1, 0.3, 1] }}>
           <h2 className="mt-6 text-[44px] sm:text-[68px] font-bold leading-[1.0] tracking-tighter text-white">Turn any topic<br />into a video.</h2>

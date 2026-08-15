@@ -7,6 +7,7 @@ export type VideoStatus =
   | "draft"
   | "queued"
   | "generating"
+  | "awaiting_review"
   | "ready"
   | "failed";
 

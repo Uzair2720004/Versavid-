@@ -60,6 +60,7 @@ const STATUS_TONE: Record<VideoStatus, { tone: Tone; label: string }> = {
   draft: { tone: "muted", label: "Draft" },
   queued: { tone: "info", label: "Queued" },
   generating: { tone: "warning", label: "Generating" },
+  awaiting_review: { tone: "info", label: "Awaiting review" },
   ready: { tone: "success", label: "Ready" },
   failed: { tone: "pink", label: "Failed" },
 };

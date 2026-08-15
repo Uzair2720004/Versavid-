@@ -1,7 +1,7 @@
 ﻿'use client';
-import { useState, useRef } from 'react';
+import { useState, useRef, useEffect } from 'react';
 import { motion } from 'framer-motion';
-import { Sparkles, Upload, FileText, Lock } from 'lucide-react';
+import { Sparkles, Upload, FileText, Lock, Check } from 'lucide-react';
 
 interface VoiceOption {
   id: string;
@@ -60,13 +60,44 @@ const ACCENT = "#8A7FFF";
 const ACCENT_DIM = "rgba(138,127,255,0.10)";
 const SIGNAL = "#E8577E";
 
-export default function Step1Script({ selections, update, isFreeTier }: { selections: Record<string, any>; update: (k: string, v: any) => void; isFreeTier: boolean }) {
+export default function Step1Script({ selections, update, isFreeTier, onTopicCommit, scriptBusy, draftScript, onScriptEdit }: { selections: Record<string, any>; update: (k: string, v: any) => void; isFreeTier: boolean; onTopicCommit?: (topic: string) => void; scriptBusy?: boolean; draftScript?: string | null; onScriptEdit?: (text: string) => void }) {
   const [playingId, setPlayingId] = useState<string | null>(null);
   const [focused, setFocused] = useState(false);
   const [toneOpen, setToneOpen] = useState(false);
+  const [scriptText, setScriptText] = useState('');
   const audioRef = useRef<HTMLAudioElement | null>(null);
   const scriptMode = selections.scriptMode || 'ai';
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const scriptSyncedRef = useRef(false);
+  const scriptSyncTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  // Pull the generated script in the first time it arrives (don't clobber edits).
+  useEffect(() => {
+    if (draftScript != null && !scriptSyncedRef.current) {
+      scriptSyncedRef.current = true;
+      setScriptText(draftScript);
+    }
+  }, [draftScript]);
+
+  useEffect(() => {
+    return () => {
+      if (scriptSyncTimer.current) clearTimeout(scriptSyncTimer.current);
+    };
+  }, []);
+
+  const commitOnEnter = (e: React.KeyboardEvent) => {
+    if (e.key !== 'Enter') return;
+    e.preventDefault();
+    if ((selections.topic || '').trim() && onTopicCommit) onTopicCommit(selections.topic);
+  };
+
+  const handleScriptEdit = (text: string) => {
+    setScriptText(text);
+    if (scriptSyncTimer.current) clearTimeout(scriptSyncTimer.current);
+    scriptSyncTimer.current = setTimeout(() => {
+      if (onScriptEdit) onScriptEdit(text);
+    }, 500);
+  };
 
   const activeLanguage = selections.language || 'English';
   const filteredVoices = voices.filter((v) => v.language === activeLanguage);
@@ -163,17 +194,42 @@ export default function Step1Script({ selections, update, isFreeTier }: { select
                 onChange={(e) => update('topic', e.target.value)}
                 onFocus={() => setFocused(true)}
                 onBlur={() => setFocused(false)}
+                onKeyDown={commitOnEnter}
                 placeholder="Historical places lost to time"
                 className="w-full bg-transparent outline-none text-[28px] leading-tight"
                 style={{ fontFamily: "var(--font-fraunces), Georgia, serif", fontWeight: 500, color: INK }}
               />
             </div>
-          </div>
-        ) : (
+{scriptBusy && (
+              <p className="text-[11px] mt-2 flex items-center gap-2" style={{ color: MUTE }}>
+                <span className="inline-block h-2 w-2 rounded-full animate-pulse" style={{ background: ACCENT }} />
+                Creating a draft and writing your script in the background&hellip;
+              </p>
+            )}
+            {draftScript != null && scriptMode === 'ai' && (
+              <div className="mt-4">
+                <label className="flex items-center justify-between text-[11px] font-mono tracking-[0.14em] uppercase mb-2" style={{ color: MUTE }}>
+                  Generated script
+                  <span className="flex items-center gap-1 text-[10px] normal-case tracking-normal" style={{ color: FAINT }}>
+                    <Check className="h-3 w-3" style={{ color: ACCENT }} /> edits save automatically
+                  </span>
+                </label>
+                <textarea
+                  value={scriptText}
+                  onChange={(e) => handleScriptEdit(e.target.value)}
+                  rows={10}
+                  className="w-full px-4 py-3 rounded-xl border text-[13px] leading-relaxed resize-y outline-none transition-colors"
+                  style={{ background: SURF, borderColor: BORDER, color: INK, fontFamily: "ui-monospace, SFMono-Regular, Menlo, monospace" }}
+                />
+              </div>
+            )}
+            </div>
+          ) : (
           <div className="space-y-3">
             <textarea
               value={selections.topic || ''}
               onChange={(e) => update('topic', e.target.value)}
+              onKeyDown={commitOnEnter}
               placeholder="Paste your script here..."
               rows={6}
               className="w-full px-4 py-3 rounded-xl border text-[14px] resize-none"

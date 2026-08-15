@@ -1,6 +1,5 @@
 import { hasRealKey } from "@/lib/utils";
 import { mockScript } from "@/lib/ai/mock";
-import { generateImages } from "@/lib/ai/generate";
 import { createAdminSupabase } from "@/lib/supabase/server";
 import { createServerSupabase } from "@/lib/supabase/server";
 import { validateGenerationRequest } from "@/lib/plan-enforcement";
@@ -79,26 +78,14 @@ function mapLanguageForPrompt(language: string): string {
  *
  * 1. Generates (or accepts) the voiceover script.
  * 2. Saves the script to the `videos` row and advances its status.
- * 3. Triggers the next pipeline step — scene image generation with fal.ai —
- *    and persists the resulting thumbnail.
+ *
+ * Image generation is intentionally NOT done here — it happens later in the
+ * main pipeline (see generate/[id]/page.tsx), independent of the script step.
  *
  * DB writes use the service-role admin client so persistence works regardless
  * of the request's auth context. They no-op gracefully when the service-role
  * key is not configured (the local-demo data layer persists instead).
  */
-/** Splits the script into per-scene text chunks based on [HOOK]/[SCENE N]/[CTA] labels. */
-function parseScenes(text: string): string[] {
-  const regex = /\[(HOOK|SCENE\s*\d+|CTA)\]/gi;
-  const matches = [...text.matchAll(regex)];
-  const scenes: string[] = [];
-  for (let i = 0; i < matches.length; i++) {
-    const start = matches[i].index! + matches[i][0].length;
-    const end = i + 1 < matches.length ? matches[i + 1].index! : text.length;
-    const chunk = text.slice(start, end).trim();
-    if (chunk) scenes.push(chunk.slice(0, 300));
-  }
-  return scenes;
-}
 
 export async function POST(request: Request) {
   const body = await request.json().catch(() => ({}));
@@ -108,7 +95,6 @@ export async function POST(request: Request) {
     tone = "Energetic",
     length = "short",
     format = "9:16",
-    photoStyle = "photoreal",
     scriptMode = "ai",
     customScript = "",
     language = "English",
@@ -144,29 +130,5 @@ export async function POST(request: Request) {
     if (error) console.error("script route: failed to save script:", error.message);
   }
 
-  // 3. Move to image generation with fal.ai — one image per actual scene in the script.
-  const scenePrompts = parseScenes(script);
-  const targetSceneCount = Math.max(3, Math.round((length === "long" ? 150 : length === "medium" ? 45 : 25) / 5));
-  if (scenePrompts.length > targetSceneCount) {
-    scenePrompts.length = targetSceneCount;
-  }
-  const fallbackCount = length === "long" ? 8 : length === "medium" ? 5 : 3;
-  const { images, source: imagesSource } = await generateImages({
-    topic,
-    style: photoStyle,
-    format,
-    count: fallbackCount,
-    prompts: scenePrompts.length ? scenePrompts : undefined,
-  });
-
-  // Persist the first scene image as the thumbnail.
-  if (supabase && images[0]) {
-    const { error } = await supabase
-      .from("videos")
-      .update({ thumbnail_url: images[0] })
-      .eq("id", videoId);
-    if (error) console.error("script route: failed to save thumbnail:", error.message);
-  }
-
-  return Response.json({ script, source, images, imagesSource });
+  return Response.json({ script, source });
 }

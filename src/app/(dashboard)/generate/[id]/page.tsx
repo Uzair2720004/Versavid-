@@ -85,7 +85,6 @@ export default function GeneratePage() {
   const started = useRef(false);
   const cancelledRef = useRef(false);
   const completedRef = useRef(0);
-  const scriptImagesRef = useRef<string[]>([]);
 
   const log = (message: string, level: LogEntry["level"] = "info") =>
     setLogs((l) => [...l, { time: now(), message, level }]);
@@ -140,7 +139,6 @@ export default function GeneratePage() {
       });
       if (cancelledRef.current) return null;
       const script: string = scriptRes.script ?? "";
-      scriptImagesRef.current = scriptRes.images ?? [];
       updateVideo(v.id, { script });
       mark("script", "done");
       log(`Script ready (${scriptRes.source}).`, "success");
@@ -162,6 +160,14 @@ export default function GeneratePage() {
     const s = v.settings;
     const isFreeTier = profile?.plan === 'free';
 
+    // Same credit pre-flight as the script step, so skipping the script step
+    // doesn't bypass the paid-tier balance gate.
+    if (!isFreeTier && (creditsState?.balance ?? 0) < v.credits_used) {
+      log("Insufficient credits to start this generation.", "warn");
+      updateVideo(v.id, { status: "failed" });
+      return;
+    }
+
     try {
       // 2. Images — only for modes that need AI-generated images
       // stock_only uses only stock footage, so skip Flux entirely
@@ -169,17 +175,14 @@ export default function GeneratePage() {
       if (s.generationMode !== "stock_only") {
         mark("images", "running");
         log("Generating scene images with Flux…");
-        images = scriptImagesRef.current ?? [];
-        if (!images.length) {
-          const imgRes = await postJSON("/api/generate/images", {
-            topic: s.topic,
-            style: s.photoStyle,
-            format: s.format,
-            count: s.length === "long" ? 8 : s.length === "medium" ? 5 : 3,
-          });
-          if (cancelledRef.current) return;
-          images = imgRes.images ?? [];
-        }
+        const imgRes = await postJSON("/api/generate/images", {
+          topic: s.topic,
+          style: s.photoStyle,
+          format: s.format,
+          count: s.length === "long" ? 8 : s.length === "medium" ? 5 : 3,
+        });
+        if (cancelledRef.current) return;
+        images = imgRes.images ?? [];
         if (images[0]) updateVideo(v.id, { thumbnail_url: images[0] });
         mark("images", "done");
         log(`${images.length} images generated.`, "success");
@@ -382,6 +385,10 @@ export default function GeneratePage() {
           updateVideo(video!.id, { status: "awaiting_review" });
         }
       });
+    } else if (video.status === "generating" && video.script) {
+      // Script already written (draft created early in the wizard): skip the script
+      // step entirely and run the expensive pipeline steps directly.
+      runRestOfPipeline(video.script);
     } else {
       // generating or later: pre-existing resume-on-refresh behavior — run the full pipeline.
       runFullPipeline();

@@ -1,5 +1,5 @@
 'use client';
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { ArrowLeft, ArrowRight, Sparkles, Loader2, Check, AlertCircle } from 'lucide-react';
 import { Topbar } from '@/components/dashboard/Topbar';
@@ -21,15 +21,102 @@ export default function CreateVideoPage() {
   const [generating, setGenerating] = useState(false);
   const [done, setDone] = useState(false);
   const [limitError, setLimitError] = useState<string | null>(null);
+  const [scriptError, setScriptError] = useState<string | null>(null);
+  const [scriptBusy, setScriptBusy] = useState(false);
   const [selections, setSelections] = useState<Record<string, any>>({ scriptMode: 'ai', lengthCredits: 0, language: 'English', tone: 'Energetic' });
+  const draftIdRef = useRef<string | null>(null);
   const router = useRouter();
-  const { addVideo, profile, updateProfile, ready } = useApp();
+  const { addVideo, updateVideo, videos, profile, updateProfile, ready } = useApp();
 
   const update = (key: string, value: any) => setSelections((prev) => ({ ...prev, [key]: value }));
 
   const credits = useMemo(() => creditsForSettings(selections as any), [selections]);
 
   const isFreeTier = profile?.plan === 'free';
+
+  // The early-created draft (if any) — lets Step 1 render/edit its generated script.
+  const draftVideo = draftIdRef.current ? videos.find((v) => v.id === draftIdRef.current) : undefined;
+
+  // Wizard uses display labels for some settings; normalize to the code values
+  // the script/generation routes expect.
+  const LENGTH_CODE: Record<string, string> = { Short: 'short', Medium: 'medium', Long: 'long' };
+  const FORMAT_CODE: Record<string, string> = { vertical: '9:16', horizontal: '16:9' };
+
+  const normalizeSettings = (topic: string) => ({
+    scriptMode: selections.scriptMode ?? 'ai',
+    topic,
+    format: FORMAT_CODE[selections.format] ?? '9:16',
+    length: LENGTH_CODE[selections.length] ?? 'short',
+    tone: selections.tone ?? 'Energetic',
+    generationMode: selections.generationMode ?? 'stock_only',
+    photoStyle: selections.photoStyle ?? 'photoreal',
+    videoStyle: selections.videoStyle ?? 'realistic',
+    voice: selections.voice ?? '',
+    language: selections.language ?? 'English',
+    speed: selections.speed ?? 'normal',
+    captionStyle: selections.captionStyle ?? 'bold',
+    captionPosition: selections.captionPosition ?? 'bottom',
+    music: selections.music ?? 'none',
+  });
+
+  // Pressing Enter in Step 1 creates the video record immediately (draft) and
+  // kicks off script generation in the background, before the wizard is complete.
+  const handleTopicCommit = async (topicText: string) => {
+    const topic = topicText.trim();
+    if (!topic || draftIdRef.current) return;
+
+    const id = crypto.randomUUID();
+    draftIdRef.current = id;
+    const settings = normalizeSettings(topic);
+
+    addVideo({
+      id,
+      user_id: '',
+      title: topic || 'Untitled video',
+      topic,
+      format: settings.format as "9:16" | "16:9",
+      status: 'draft',
+      script: null,
+      video_url: null,
+      thumbnail_url: null,
+      credits_used: 0,
+      duration: 0,
+      settings: settings as any,
+      created_at: new Date().toISOString(),
+    });
+
+    setScriptError(null);
+    setScriptBusy(true);
+    try {
+      const res = await fetch('/api/generate/script', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          videoId: id,
+          topic,
+          tone: settings.tone,
+          length: settings.length,
+          format: settings.format,
+          photoStyle: settings.photoStyle,
+          scriptMode: settings.scriptMode,
+          customScript: settings.scriptMode === 'upload' ? topic : '',
+          language: settings.language,
+          generationMode: settings.generationMode,
+        }),
+      });
+      if (!res.ok) {
+        const err = await res.json().catch(() => ({}));
+        setScriptError(err.error ?? `Script request failed (${res.status})`);
+        return;
+      }
+      const data = await res.json();
+      updateVideo(id, { script: data.script ?? null, status: 'awaiting_review' });
+    } catch {
+      setScriptError('Could not generate the script right now. It will be generated when you submit.');
+    } finally {
+      setScriptBusy(false);
+    }
+  };
 
   const stepValid = useMemo(() => {
     if (step === 1) return selections.topic && selections.format && selections.length && selections.voice && selections.language;
@@ -99,27 +186,42 @@ export default function CreateVideoPage() {
     setLimitError(null);
     setGenerating(true);
 
-    const id = crypto.randomUUID();
-    
-    // Create video record in database FIRST (await it) before starting generation
-    const videoRecord = {
-      id,
-      user_id: '',
-      title: selections.topic || 'Untitled video',
-      topic: selections.topic,
-      format: selections.format,
-      status: 'queued' as const,
-      script: null,
-      video_url: null,
-      thumbnail_url: null,
-      credits_used: credits,
-      duration: 0,
-      settings: selections as any,
-      created_at: new Date().toISOString(),
-    };
+    const id = draftIdRef.current ?? crypto.randomUUID();
 
-    // Call addVideo and wait for DB insert to complete
-    addVideo(videoRecord);
+    if (draftIdRef.current) {
+      // Reuse the early-created draft: backfill the completed settings and either
+      // resume to the review checkpoint (script ready) or regenerate the script.
+      const draftRecord = videos.find((v) => v.id === id);
+      updateVideo(id, {
+        title: selections.topic || 'Untitled video',
+        topic: selections.topic,
+        format: (FORMAT_CODE[selections.format] ?? '9:16') as "9:16" | "16:9",
+        credits_used: credits,
+        settings: selections as any,
+        status: draftRecord?.script ? 'generating' : 'draft',
+      });
+    } else {
+      // Create video record in database FIRST (await it) before starting generation
+      const videoRecord = {
+        id,
+        user_id: '',
+        title: selections.topic || 'Untitled video',
+        topic: selections.topic,
+        format: (FORMAT_CODE[selections.format] ?? selections.format) as any,
+        status: 'queued' as const,
+        script: null,
+        video_url: null,
+        thumbnail_url: null,
+        credits_used: credits,
+        duration: 0,
+        settings: selections as any,
+        created_at: new Date().toISOString(),
+      };
+
+      // Call addVideo and wait for DB insert to complete
+      addVideo(videoRecord);
+    }
+
     // Small delay to ensure DB write propagates (Supabase is fast but we need the row to exist)
     setTimeout(() => {
       router.push(`/generate/${id}`);
@@ -178,10 +280,16 @@ export default function CreateVideoPage() {
                       <p className="text-[13px]">{limitError}</p>
                     </motion.div>
                   )}
+                  {scriptError && (
+                    <motion.div initial={{ opacity: 0, y: -10 }} animate={{ opacity: 1, y: 0 }} className="mb-6 p-4 rounded-xl bg-amber-500/10 border border-amber-500/30 flex items-center gap-3 text-amber-300">
+                      <AlertCircle className="h-5 w-5 shrink-0" />
+                      <p className="text-[13px]">{scriptError}</p>
+                    </motion.div>
+                  )}
                   <div className="mb-8"><StepIndicator current={step} onStepClick={setStep} /></div>
                   <div className="max-w-2xl">
                     <AnimatePresence mode="wait">
-                      {step === 1 && <Step1Script key="s1" selections={selections} update={update} isFreeTier={isFreeTier} />}
+                      {step === 1 && <Step1Script key="s1" selections={selections} update={update} isFreeTier={isFreeTier} onTopicCommit={handleTopicCommit} scriptBusy={scriptBusy} draftScript={draftVideo?.script ?? null} onScriptEdit={(text) => { if (draftIdRef.current) updateVideo(draftIdRef.current, { script: text }); }} />}
                       {step === 2 && <Step2Media key="s2" selections={selections} update={update} isFreeTier={isFreeTier} userPlan={profile?.plan ?? 'free'} />}
                       {step === 3 && <Step3Voice key="s3" selections={selections} update={update} />}
                       {step === 4 && <Step4Review key="s4" selections={selections} credits={credits} />}

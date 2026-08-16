@@ -10,7 +10,7 @@ import { Card, StatusBadge } from "@/components/ui/primitives";
 import { Button, ButtonLink } from "@/components/ui/Button";
 import { Icon } from "@/components/ui/Icon";
 import { GEN_STEPS } from "@/lib/constants";
-import type { GenStep, LogEntry } from "@/lib/types";
+import type { GenStep, LogEntry, VideoEditAsset } from "@/lib/types";
 import { cn } from "@/lib/utils";
 import AmbientBackground from "@/components/AmbientBackground";
 import { Topbar } from "@/components/dashboard/Topbar";
@@ -342,10 +342,54 @@ export default function GeneratePage() {
 
       // 8. Ready — persist + deduct credits (skip for free tier)
       mark("ready", "done");
+
+      const scenes = capScenes(parseScenes(script), s.length);
+      let builtAssets: VideoEditAsset[] = [];
+
+      if (mode === "stock_only" || mode === "stock_plus_ai_images") {
+        builtAssets = footage.map((f, i) => ({
+          index: i,
+          type: "footage" as const,
+          url: f.url,
+          ...(f.duration != null ? { duration: f.duration } : {}),
+          ...(scenes[i] ? { text: scenes[i] } : {}),
+        }));
+      } else if (mode === "ai_images_only") {
+        builtAssets = images.map((url, i) => ({
+          index: i,
+          type: "image" as const,
+          url,
+          ...(scenes[i] ? { text: scenes[i] } : {}),
+        }));
+      } else if (mode === "ai_images_plus_ai_video") {
+        const clips = clipRes.clips ?? [];
+        builtAssets = [
+          ...clips.map((c, i) => ({
+            index: i,
+            type: "clip" as const,
+            url: c.url,
+            ...(c.duration != null ? { duration: c.duration } : {}),
+            ...(scenes[i] ? { text: scenes[i] } : {}),
+          })),
+          ...images.slice(clips.length).map((url, i) => ({
+            index: clips.length + i,
+            type: "image" as const,
+            url,
+            ...(scenes[clips.length + i] ? { text: scenes[clips.length + i] } : {}),
+          })),
+        ];
+      }
+
       updateVideo(v.id, {
         status: "ready",
         video_url: renderRes.video_url,
         thumbnail_url: renderRes.thumbnail_url ?? images[0] ?? null,
+        edits: {
+          assets: builtAssets,
+          captionStyle: s.captionStyle,
+          music: s.music,
+          musicVolume: 0.15,
+        },
       });
       if (!isFreeTier) {
         deductCredits(v.credits_used, `Video render — ${v.title}`);

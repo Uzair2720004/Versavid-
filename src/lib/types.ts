@@ -56,8 +56,16 @@ export interface VideoSettings {
   music: string;
 }
 
+export interface VideoEditAsset {
+  index: number;
+  type: "clip" | "image" | "footage";
+  url: string;
+  text?: string;
+  duration?: number;
+}
+
 export interface VideoEdits {
-  clipSwaps?: { index: number; url: string }[];
+  assets?: VideoEditAsset[];
   captionStyle?: string;
   music?: string;
   musicVolume?: number;

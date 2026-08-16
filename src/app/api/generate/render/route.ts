@@ -132,7 +132,7 @@ export async function POST(request: Request) {
           ? [
               { type: "voice", text: cleanText, model: "elevenlabs", voice: voice, connection: "elevenlabs-main" },
               { type: "subtitles", language: "auto", settings: CAPTION_STYLES[captionStyle] ?? CAPTION_STYLES.clean },
-              { type: "audio", src: MUSIC_TRACKS[music] ?? MUSIC_TRACKS.uplifting, volume: musicVolume, loop: true },
+              { type: "audio", src: MUSIC_TRACKS[music] ?? MUSIC_TRACKS.uplifting, loop: -1, duration: -2, volume: musicVolume },
             ]
           : [],
       };

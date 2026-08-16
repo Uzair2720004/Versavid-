@@ -119,7 +119,11 @@ export default function CreateVideoPage() {
   };
 
   const stepValid = useMemo(() => {
-    if (step === 1) return selections.topic && selections.format && selections.length && selections.voice && selections.language;
+    if (step === 1) {
+      if (!selections.topic || !selections.format || !selections.length || !selections.voice || !selections.language) return false;
+      if (scriptBusy) return false;
+      return draftVideo?.script != null || scriptError != null;
+    }
     if (step === 2) {
       if (!selections.generationMode) return false;
       const mode = selections.generationMode;
@@ -129,7 +133,11 @@ export default function CreateVideoPage() {
     }
     if (step === 3) return selections.speed && selections.captionStyle;
     return true;
-  }, [step, selections]);
+  }, [step, selections, scriptBusy, draftVideo, scriptError]);
+
+  // Step 1 base fields filled (topic/format/length/voice/language) — used to
+  // show a targeted helper message when the only blocker left is the script.
+  const step1Base = !!(selections.topic && selections.format && selections.length && selections.voice && selections.language);
 
   const canGenerate = useMemo(() => {
     return selections.topic && selections.format && selections.length &&
@@ -301,10 +309,17 @@ export default function CreateVideoPage() {
                       <ArrowLeft className="h-4 w-4" /> Back
                     </button>
                     {step < 4 ? (
-                      <button onClick={() => setStep((s) => Math.min(4, s + 1))} disabled={!stepValid}
-                        className={'flex items-center gap-2 h-11 px-6 rounded-xl text-[13px] font-medium transition-all duration-300 ' + (stepValid ? 'bg-gradient-to-r from-fuchsia-500 to-purple-600 text-white hover:scale-[1.03]' : 'bg-white/5 text-[#767D88] cursor-not-allowed')}>
-                        Continue <ArrowRight className="h-4 w-4" />
-                      </button>
+                      <div className="flex flex-col items-end gap-2">
+                        <button onClick={() => setStep((s) => Math.min(4, s + 1))} disabled={!stepValid}
+                          className={'flex items-center gap-2 h-11 px-6 rounded-xl text-[13px] font-medium transition-all duration-300 ' + (stepValid ? 'bg-gradient-to-r from-fuchsia-500 to-purple-600 text-white hover:scale-[1.03]' : 'bg-white/5 text-[#767D88] cursor-not-allowed')}>
+                          Continue <ArrowRight className="h-4 w-4" />
+                        </button>
+                        {step === 1 && !stepValid && step1Base && (
+                          <p className="text-[11px]" style={{ color: scriptBusy ? '#a8aeb8' : '#767D88' }}>
+                            {scriptBusy ? 'Generating your script…' : 'Generate a script to continue'}
+                          </p>
+                        )}
+                      </div>
                     ) : (
                       <button onClick={handleGenerate} disabled={generating}
                         className="flex items-center gap-2 h-11 px-6 rounded-xl text-[13px] font-medium bg-gradient-to-r from-fuchsia-500 to-purple-600 text-white hover:scale-[1.03] transition-all duration-300 disabled:opacity-70">

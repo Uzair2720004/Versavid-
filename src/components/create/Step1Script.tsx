@@ -1,7 +1,7 @@
 ﻿'use client';
 import { useState, useRef, useEffect } from 'react';
 import { motion } from 'framer-motion';
-import { Sparkles, Upload, FileText, Lock, Check } from 'lucide-react';
+import { Sparkles, Upload, FileText, Lock, Check, Loader2 } from 'lucide-react';
 
 interface VoiceOption {
   id: string;
@@ -70,6 +70,7 @@ export default function Step1Script({ selections, update, isFreeTier, onTopicCom
   const fileInputRef = useRef<HTMLInputElement>(null);
   const scriptSyncedRef = useRef(false);
   const scriptSyncTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const topicCommittedRef = useRef<string | null>(null);
 
   // Pull the generated script in the first time it arrives (don't clobber edits).
   useEffect(() => {
@@ -85,10 +86,22 @@ export default function Step1Script({ selections, update, isFreeTier, onTopicCom
     };
   }, []);
 
+  const commitTopic = (topic: string) => {
+    const trimmed = (topic || '').trim();
+    if (!trimmed || topicCommittedRef.current === trimmed || !onTopicCommit) return;
+    topicCommittedRef.current = trimmed;
+    onTopicCommit(trimmed);
+  };
+
   const commitOnEnter = (e: React.KeyboardEvent) => {
     if (e.key !== 'Enter') return;
     e.preventDefault();
-    if ((selections.topic || '').trim() && onTopicCommit) onTopicCommit(selections.topic);
+    commitTopic(selections.topic);
+  };
+
+  const commitOnBlur = () => {
+    setFocused(false);
+    commitTopic(selections.topic);
   };
 
   const handleScriptEdit = (text: string) => {
@@ -193,12 +206,33 @@ export default function Step1Script({ selections, update, isFreeTier, onTopicCom
                 value={selections.topic || ''}
                 onChange={(e) => update('topic', e.target.value)}
                 onFocus={() => setFocused(true)}
-                onBlur={() => setFocused(false)}
+                onBlur={commitOnBlur}
                 onKeyDown={commitOnEnter}
                 placeholder="Historical places lost to time"
                 className="w-full bg-transparent outline-none text-[28px] leading-tight"
                 style={{ fontFamily: "var(--font-fraunces), Georgia, serif", fontWeight: 500, color: INK }}
               />
+            </div>
+            <div className="px-6 pb-6">
+              <button
+                onClick={() => commitTopic(selections.topic)}
+                disabled={scriptBusy || draftScript != null || !(selections.topic || '').trim()}
+                className="flex items-center gap-2 px-4 py-2 rounded-lg border text-[12px] font-medium transition-all duration-300"
+                style={{
+                  borderColor: draftScript != null ? BORDER : ACCENT,
+                  background: draftScript != null ? 'transparent' : ACCENT_DIM,
+                  color: INK,
+                  cursor: scriptBusy || draftScript != null ? 'not-allowed' : 'pointer',
+                  opacity: scriptBusy || draftScript != null ? 0.55 : 1,
+                }}
+              >
+                {scriptBusy ? (
+                  <Loader2 className="h-3.5 w-3.5 animate-spin" style={{ color: ACCENT }} />
+                ) : (
+                  <Sparkles className="h-3.5 w-3.5" style={{ color: ACCENT }} />
+                )}
+                {scriptBusy ? 'Generating script…' : 'Generate script'}
+              </button>
             </div>
 {scriptBusy && (
               <p className="text-[11px] mt-2 flex items-center gap-2" style={{ color: MUTE }}>
@@ -229,6 +263,7 @@ export default function Step1Script({ selections, update, isFreeTier, onTopicCom
             <textarea
               value={selections.topic || ''}
               onChange={(e) => update('topic', e.target.value)}
+              onBlur={commitOnBlur}
               onKeyDown={commitOnEnter}
               placeholder="Paste your script here..."
               rows={6}

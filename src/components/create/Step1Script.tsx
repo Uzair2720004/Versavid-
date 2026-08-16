@@ -60,7 +60,7 @@ const ACCENT = "#8A7FFF";
 const ACCENT_DIM = "rgba(138,127,255,0.10)";
 const SIGNAL = "#E8577E";
 
-export default function Step1Script({ selections, update, isFreeTier, onTopicCommit, scriptBusy, draftScript, onScriptEdit }: { selections: Record<string, any>; update: (k: string, v: any) => void; isFreeTier: boolean; onTopicCommit?: (topic: string) => void; scriptBusy?: boolean; draftScript?: string | null; onScriptEdit?: (text: string) => void }) {
+export default function Step1Script({ selections, update, isFreeTier, onTopicCommit, scriptBusy, draftScript, onScriptEdit, lengthMismatch, onRegenerateForLength }: { selections: Record<string, any>; update: (k: string, v: any) => void; isFreeTier: boolean; onTopicCommit?: (topic: string) => void; scriptBusy?: boolean; draftScript?: string | null; onScriptEdit?: (text: string) => void; lengthMismatch?: boolean; onRegenerateForLength?: () => void }) {
   const [playingId, setPlayingId] = useState<string | null>(null);
   const [focused, setFocused] = useState(false);
   const [toneOpen, setToneOpen] = useState(false);
@@ -255,6 +255,32 @@ export default function Step1Script({ selections, update, isFreeTier, onTopicCom
                   className="w-full px-4 py-3 rounded-xl border text-[13px] leading-relaxed resize-y outline-none transition-colors"
                   style={{ background: SURF, borderColor: BORDER, color: INK, fontFamily: "ui-monospace, SFMono-Regular, Menlo, monospace" }}
                 />
+                {lengthMismatch && (
+                  <div className="mt-3 flex items-center justify-between gap-3 rounded-lg border px-4 py-3" style={{ borderColor: SIGNAL, background: 'rgba(232,87,126,0.08)' }}>
+                    <p className="text-[11px] leading-relaxed" style={{ color: INK }}>
+                      This script was written for a different length. Regenerate to match {selections.length || 'the current length'}?
+                    </p>
+                    <button
+                      onClick={onRegenerateForLength}
+                      disabled={scriptBusy}
+                      className="flex shrink-0 items-center gap-2 px-3 py-1.5 rounded-lg border text-[11px] font-medium transition-all duration-300"
+                      style={{
+                        borderColor: SIGNAL,
+                        background: 'transparent',
+                        color: INK,
+                        cursor: scriptBusy ? 'not-allowed' : 'pointer',
+                        opacity: scriptBusy ? 0.55 : 1,
+                      }}
+                    >
+                      {scriptBusy ? (
+                        <Loader2 className="h-3 w-3 animate-spin" style={{ color: SIGNAL }} />
+                      ) : (
+                        <Sparkles className="h-3 w-3" style={{ color: SIGNAL }} />
+                      )}
+                      {scriptBusy ? 'Regenerating…' : 'Regenerate'}
+                    </button>
+                  </div>
+                )}
               </div>
             )}
             </div>

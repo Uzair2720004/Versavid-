@@ -42,6 +42,11 @@ export default function CreateVideoPage() {
   const LENGTH_CODE: Record<string, string> = { Short: 'short', Medium: 'medium', Long: 'long' };
   const FORMAT_CODE: Record<string, string> = { vertical: '9:16', horizontal: '16:9' };
 
+  const scriptLengthMismatch =
+    !!draftVideo?.script &&
+    !!draftVideo?.settings?.length &&
+    draftVideo.settings.length !== LENGTH_CODE[selections.length];
+
   const normalizeSettings = (topic: string) => ({
     scriptMode: selections.scriptMode ?? 'ai',
     topic,
@@ -63,28 +68,34 @@ export default function CreateVideoPage() {
   // kicks off script generation in the background, before the wizard is complete.
   const handleTopicCommit = async (topicText: string) => {
     const topic = topicText.trim();
-    if (!topic || draftIdRef.current) return;
+    if (!topic) return;
 
-    const id = crypto.randomUUID();
-    draftIdRef.current = id;
+    const id = draftIdRef.current ?? crypto.randomUUID();
     const settings = normalizeSettings(topic);
 
-    addVideo({
-      id,
-      user_id: '',
-      title: topic || 'Untitled video',
-      topic,
-      format: settings.format as "9:16" | "16:9",
-      status: 'draft',
-      script: null,
-      video_url: null,
-      thumbnail_url: null,
-      credits_used: 0,
-      duration: 0,
-      settings: settings as any,
-      edits: {},
-      created_at: new Date().toISOString(),
-    });
+    if (draftIdRef.current) {
+      // Regeneration (e.g. length changed): re-snapshot the current settings so
+      // the draft's length matches the new script, then rewrite the script.
+      updateVideo(id, { settings: settings as any });
+    } else {
+      draftIdRef.current = id;
+      addVideo({
+        id,
+        user_id: '',
+        title: topic || 'Untitled video',
+        topic,
+        format: settings.format as "9:16" | "16:9",
+        status: 'draft',
+        script: null,
+        video_url: null,
+        thumbnail_url: null,
+        credits_used: 0,
+        duration: 0,
+        settings: settings as any,
+        edits: {},
+        created_at: new Date().toISOString(),
+      });
+    }
 
     setScriptError(null);
     setScriptBusy(true);
@@ -299,7 +310,7 @@ export default function CreateVideoPage() {
                   <div className="mb-8"><StepIndicator current={step} onStepClick={setStep} /></div>
                   <div className="max-w-2xl">
                     <AnimatePresence mode="wait">
-                      {step === 1 && <Step1Script key="s1" selections={selections} update={update} isFreeTier={isFreeTier} onTopicCommit={handleTopicCommit} scriptBusy={scriptBusy} draftScript={draftVideo?.script ?? null} onScriptEdit={(text) => { if (draftIdRef.current) updateVideo(draftIdRef.current, { script: text }); }} />}
+                      {step === 1 && <Step1Script key="s1" selections={selections} update={update} isFreeTier={isFreeTier} onTopicCommit={handleTopicCommit} scriptBusy={scriptBusy} draftScript={draftVideo?.script ?? null} onScriptEdit={(text) => { if (draftIdRef.current) updateVideo(draftIdRef.current, { script: text }); }} lengthMismatch={scriptLengthMismatch} onRegenerateForLength={() => handleTopicCommit(selections.topic)} />}
                       {step === 2 && <Step2Media key="s2" selections={selections} update={update} isFreeTier={isFreeTier} userPlan={profile?.plan ?? 'free'} />}
                       {step === 3 && <Step3Voice key="s3" selections={selections} update={update} />}
                       {step === 4 && <Step4Review key="s4" selections={selections} credits={credits} />}

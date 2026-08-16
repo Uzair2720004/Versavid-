@@ -56,6 +56,13 @@ export interface VideoSettings {
   music: string;
 }
 
+export interface VideoEdits {
+  clipSwaps?: { index: number; url: string }[];
+  captionStyle?: string;
+  music?: string;
+  musicVolume?: number;
+}
+
 export interface VideoRecord {
   id: string;
   user_id: string;
@@ -69,6 +76,7 @@ export interface VideoRecord {
   credits_used: number;
   duration: number; // seconds
   settings: VideoSettings;
+  edits: VideoEdits;
   created_at: string;
 }
 

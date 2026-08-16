@@ -82,6 +82,7 @@ export default function CreateVideoPage() {
       credits_used: 0,
       duration: 0,
       settings: settings as any,
+      edits: {},
       created_at: new Date().toISOString(),
     });
 
@@ -223,6 +224,7 @@ export default function CreateVideoPage() {
         credits_used: credits,
         duration: 0,
         settings: selections as any,
+        edits: {},
         created_at: new Date().toISOString(),
       };
 

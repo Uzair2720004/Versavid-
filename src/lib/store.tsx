@@ -111,6 +111,7 @@ function seedVideos(userId: string): VideoRecord[] {
     thumbnail_url: placeholderImage(i + 11, format === "9:16" ? 450 : 800, format === "9:16" ? 800 : 450),
     credits_used: credits,
     duration,
+    edits: {},
     created_at: new Date(now - ageHrs * 3600_000).toISOString(),
 settings: {
       scriptMode: "ai",
@@ -466,6 +467,7 @@ const profile: Profile = {
             credits_used: record.credits_used,
             duration: record.duration,
             settings: record.settings,
+            edits: record.edits,
             created_at: record.created_at,
           })
           .then(({ error }) => {

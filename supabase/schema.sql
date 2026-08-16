@@ -62,6 +62,7 @@ create table if not exists public.videos (
   credits_used  integer not null default 0,
   duration      integer not null default 0,
   settings      jsonb not null default '{}'::jsonb,
+  edits         jsonb not null default '{}'::jsonb,
   created_at    timestamptz not null default now()
 );
 create index if not exists videos_user_id_idx on public.videos (user_id);

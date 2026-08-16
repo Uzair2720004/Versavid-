@@ -11,7 +11,7 @@ create extension if not exists "uuid-ossp";
 
 -- Enums ----------------------------------------------------------------------
 do $$ begin
-  create type video_status as enum ('draft','queued','generating','ready','failed');
+  create type video_status as enum ('draft','queued','generating','awaiting_review','ready','failed');
 exception when duplicate_object then null; end $$;
 
 do $$ begin

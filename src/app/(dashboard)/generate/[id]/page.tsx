@@ -6,7 +6,7 @@ import Image from "next/image";
 import { motion } from "framer-motion";
 import { Sparkles, FileText } from "lucide-react";
 import { useApp } from "@/lib/store";
-import { Card, ProgressBar, StatusBadge } from "@/components/ui/primitives";
+import { Card, StatusBadge } from "@/components/ui/primitives";
 import { Button, ButtonLink } from "@/components/ui/Button";
 import { Icon } from "@/components/ui/Icon";
 import { GEN_STEPS } from "@/lib/constants";
@@ -14,6 +14,7 @@ import type { GenStep, LogEntry } from "@/lib/types";
 import { cn } from "@/lib/utils";
 import AmbientBackground from "@/components/AmbientBackground";
 import { Topbar } from "@/components/dashboard/Topbar";
+import ProgressOrb from "@/components/generate/ProgressOrb";
 
 function parseScenes(text: string): string[] {
   const regex = /\[(HOOK|SCENE\s*\d+|CTA)\]/gi;
@@ -497,147 +498,73 @@ export default function GeneratePage() {
         <StatusBadge status={video.status} />
       </div>
 
-      {/* Overall progress */}
-      <Card className="mt-6 p-6">
-        <div className="flex items-center justify-between">
-          <span className="text-sm font-medium text-ink">
-            {finished ? "Completed" : "Overall progress"}
-          </span>
-          <span className="text-lg font-bold gradient-text">{progress}%</span>
-        </div>
-        <ProgressBar value={progress} className="mt-3" height={12} />
-      </Card>
+      <div className="mx-auto mt-6 flex max-w-[480px] flex-col gap-6">
+        <ProgressOrb progress={progress} steps={steps} />
 
-      <div className="mt-6 grid gap-6 lg:grid-cols-[1.3fr_1fr]">
-        {/* Step cards */}
-        <div className="grid gap-3 sm:grid-cols-2">
-          {steps.map((step) => (
-            <StepCard key={step.key} step={step} />
-          ))}
-        </div>
-
-        {/* Live log + preview */}
-        <div className="space-y-4">
-          {finished && (
-            <Card className="overflow-hidden">
-              <div className="relative aspect-video bg-canvas">
-                {video.thumbnail_url ? (
-                  <Image src={video.thumbnail_url} alt={video.title} fill className="object-cover" />
-                ) : (
-                  <div className="flex h-full items-center justify-center gradient-bg-soft" />
-                )}
-                <span className="absolute inset-0 flex items-center justify-center">
-                  <span className="flex h-14 w-14 items-center justify-center rounded-full bg-canvas/80 text-ink backdrop-blur">
-                    <Icon name="play" size={22} />
-                  </span>
+        {finished && (
+          <Card className="overflow-hidden">
+            <div className="relative aspect-video bg-canvas">
+              {video.thumbnail_url ? (
+                <Image src={video.thumbnail_url} alt={video.title} fill className="object-cover" />
+              ) : (
+                <div className="flex h-full items-center justify-center gradient-bg-soft" />
+              )}
+              <span className="absolute inset-0 flex items-center justify-center">
+                <span className="flex h-14 w-14 items-center justify-center rounded-full bg-canvas/80 text-ink backdrop-blur">
+                  <Icon name="play" size={22} />
                 </span>
-              </div>
-              <div className="flex gap-2 p-4">
-                <Button fullWidth onClick={() => router.push("/videos")}>
-                  <Icon name="download" size={16} />
-                  Download
-                </Button>
-                <ButtonLink href="/create" variant="secondary">
-                  <Icon name="plus" size={16} />
-                  New
-                </ButtonLink>
-              </div>
-            </Card>
-          )}
-
-          <Card className="flex flex-col">
-            <div className="flex items-center justify-between border-b border-edge px-4 py-3">
-              <span className="flex items-center gap-2 text-sm font-medium text-ink">
-                <span className={cn("h-2 w-2 rounded-full", finished ? "bg-success" : "animate-pulse bg-warning")} />
-                Live log
               </span>
-              <span className="text-xs text-muted">{logs.length} events</span>
             </div>
-            <div className="max-h-[320px] overflow-y-auto p-4 font-mono text-xs">
-              {logs.length === 0 && <p className="text-muted">Waiting to start…</p>}
-              {logs.map((l, i) => (
-                <div key={i} className="flex gap-3 py-1">
-                  <span className="shrink-0 text-muted">{l.time}</span>
-                  <span
-                    className={cn(
-                      l.level === "success" && "text-success",
-                      l.level === "warn" && "text-warning",
-                      l.level === "info" && "text-ink"
-                    )}
-                  >
-                    {l.message}
-                  </span>
-                </div>
-              ))}
+            <div className="flex gap-2 p-4">
+              <Button fullWidth onClick={() => router.push("/videos")}>
+                <Icon name="download" size={16} />
+                Download
+              </Button>
+              <ButtonLink href="/create" variant="secondary">
+                <Icon name="plus" size={16} />
+                New
+              </ButtonLink>
             </div>
           </Card>
-
-          {!finished && (
-            <div className="flex items-start gap-3 rounded-card border border-edge bg-panel/60 p-4">
-              <Icon name="sparkles" size={18} className="mt-0.5 shrink-0 text-accent-soft" />
-              <p className="text-sm text-muted">
-                <span className="font-medium text-ink">Tip:</span> you can navigate away — generation
-                continues in the background and your video will appear in{" "}
-                <span className="text-accent-soft">My Videos</span> when it&apos;s done.
-              </p>
-            </div>
-          )}
-        </div>
-      </div>
-    </div>
-  );
-}
-
-function StepCard({ step }: { step: GenStep }) {
-  const border =
-    step.status === "done"
-      ? "border-success/40"
-      : step.status === "running"
-        ? "border-accent/60"
-        : step.status === "failed"
-          ? "border-pink/50"
-          : "border-edge";
-  return (
-    <div className={cn("flex items-start gap-3 rounded-card border bg-panel p-4 transition-colors", border)}>
-      <span
-        className={cn(
-          "flex h-9 w-9 shrink-0 items-center justify-center rounded-lg",
-          step.status === "done"
-            ? "bg-success/20 text-success"
-            : step.status === "running"
-              ? "gradient-bg text-white"
-              : step.status === "failed"
-                ? "bg-pink/20 text-pink"
-                : "bg-panel-2 text-muted"
         )}
-      >
-        {step.status === "done" ? (
-          <Icon name="check" size={16} />
-        ) : step.status === "running" ? (
-          <span className="h-2.5 w-2.5 animate-pulse rounded-full bg-white" />
-        ) : step.status === "failed" ? (
-          <Icon name="x" size={16} />
-        ) : (
-          <span className="h-2 w-2 rounded-full bg-muted" />
+
+        <Card className="flex flex-col">
+          <div className="flex items-center justify-between border-b border-edge px-4 py-3">
+            <span className="flex items-center gap-2 text-sm font-medium text-ink">
+              <span className={cn("h-2 w-2 rounded-full", finished ? "bg-success" : "animate-pulse bg-warning")} />
+              Live log
+            </span>
+            <span className="text-xs text-muted">{logs.length} events</span>
+          </div>
+          <div className="max-h-[320px] overflow-y-auto p-4 font-mono text-xs">
+            {logs.length === 0 && <p className="text-muted">Waiting to start…</p>}
+            {logs.map((l, i) => (
+              <div key={i} className="flex gap-3 py-1">
+                <span className="shrink-0 text-muted">{l.time}</span>
+                <span
+                  className={cn(
+                    l.level === "success" && "text-success",
+                    l.level === "warn" && "text-warning",
+                    l.level === "info" && "text-ink"
+                  )}
+                >
+                  {l.message}
+                </span>
+              </div>
+            ))}
+          </div>
+        </Card>
+
+        {!finished && (
+          <div className="flex items-start gap-3 rounded-card border border-edge bg-panel/60 p-4">
+            <Icon name="sparkles" size={18} className="mt-0.5 shrink-0 text-accent-soft" />
+            <p className="text-sm text-muted">
+              <span className="font-medium text-ink">Tip:</span> you can navigate away — generation
+              continues in the background and your video will appear in{" "}
+              <span className="text-accent-soft">My Videos</span> when it&apos;s done.
+            </p>
+          </div>
         )}
-      </span>
-      <div className="min-w-0">
-        <p className="text-sm font-semibold text-ink">{step.label}</p>
-        <p className="mt-0.5 text-xs text-muted">{step.description}</p>
-        <p
-          className={cn(
-            "mt-1.5 text-[11px] font-medium uppercase tracking-wide",
-            step.status === "done"
-              ? "text-success"
-              : step.status === "running"
-                ? "text-accent-soft"
-                : step.status === "failed"
-                  ? "text-pink"
-                  : "text-muted"
-          )}
-        >
-          {step.status === "running" ? "In progress" : step.status}
-        </p>
       </div>
     </div>
   );

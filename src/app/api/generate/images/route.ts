@@ -8,13 +8,14 @@ export const runtime = "nodejs";
  */
 export async function POST(request: Request) {
   const body = await request.json().catch(() => ({}));
-  const { topic, style, count, format } = body as Record<string, unknown>;
+  const { topic, style, count, format, prompts } = body as Record<string, unknown>;
 
   const { images, source } = await generateImages({
     topic: topic as string | undefined,
     style: style as string | undefined,
     count: count as number | undefined,
     format: format as string | undefined,
+    prompts: prompts as string[] | undefined,
   });
 
   return Response.json({ images, source });

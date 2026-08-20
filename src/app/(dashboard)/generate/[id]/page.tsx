@@ -17,15 +17,18 @@ import AmbientBackground from "@/components/AmbientBackground";
 import { Topbar } from "@/components/dashboard/Topbar";
 import ProgressOrb from "@/components/generate/ProgressOrb";
 
-function parseScenes(text: string): string[] {
+function parseScenes(text: string): { narration: string; visual: string }[] {
   const regex = /\[(HOOK|SCENE\s*\d+|CTA)\]/gi;
   const matches = [...text.matchAll(regex)];
-  const scenes: string[] = [];
+  const scenes: { narration: string; visual: string }[] = [];
   for (let i = 0; i < matches.length; i++) {
     const start = matches[i].index! + matches[i][0].length;
     const end = i + 1 < matches.length ? matches[i + 1].index! : text.length;
     const chunk = text.slice(start, end).trim();
-    if (chunk) scenes.push(chunk.slice(0, 300));
+    const visualMatch = chunk.match(/\[VISUAL:\s*([^\]]+)\]/i);
+    const visual = visualMatch ? visualMatch[1].trim() : "";
+    const narration = chunk.replace(/\[VISUAL:[^\]]*\]/i, "").trim().slice(0, 300);
+    if (narration) scenes.push({ narration, visual });
   }
   // Fallback: if no scene markers found, split into ~4 equal chunks
   if (scenes.length === 0) {
@@ -33,13 +36,13 @@ function parseScenes(text: string): string[] {
     const chunkSize = Math.max(1, Math.ceil(words.length / 4));
     for (let i = 0; i < words.length; i += chunkSize) {
       const chunk = words.slice(i, i + chunkSize).join(" ");
-      if (chunk.trim()) scenes.push(chunk.slice(0, 300));
+      if (chunk.trim()) scenes.push({ narration: chunk.slice(0, 300), visual: "" });
     }
   }
   return scenes;
 }
 
-function capScenes(scenes: string[], length: string): string[] {
+function capScenes(scenes: { narration: string; visual: string }[], length: string): { narration: string; visual: string }[] {
   const targetSeconds = length === "long" ? 150 : length === "medium" ? 45 : 25;
   const targetCount = Math.max(3, Math.round(targetSeconds / 5));
   return scenes.length > targetCount ? scenes.slice(0, targetCount) : scenes;
@@ -182,6 +185,7 @@ export default function GeneratePage() {
           style: s.photoStyle,
           format: s.format,
           count: s.length === "long" ? 8 : s.length === "medium" ? 5 : 3,
+          prompts: capScenes(parseScenes(script), s.length).map((sc) => sc.visual || sc.narration),
         });
         if (cancelledRef.current) return;
         images = imgRes.images ?? [];
@@ -205,7 +209,7 @@ export default function GeneratePage() {
         // Stock video mode: call /api/generate/footage for video clips
         log("Fetching stock footage (video) from Pexels…");
         const footageRes = await postJSON("/api/generate/footage", {
-          sceneTexts: capScenes(parseScenes(script), s.length),
+          sceneTexts: capScenes(parseScenes(script), s.length).map((sc) => sc.visual || sc.narration),
           type: "video",
           topic: s.topic,
           generationMode: s.generationMode,
@@ -219,7 +223,7 @@ export default function GeneratePage() {
         // Stock photo mode: call /api/generate/footage for photos (AI images mixed in later)
         log("Fetching stock photos from Pexels…");
         const footageRes = await postJSON("/api/generate/footage", {
-          sceneTexts: capScenes(parseScenes(script), s.length),
+          sceneTexts: capScenes(parseScenes(script), s.length).map((sc) => sc.visual || sc.narration),
           type: "photo",
           topic: s.topic,
           generationMode: s.generationMode,
@@ -353,7 +357,7 @@ export default function GeneratePage() {
           type: "footage" as const,
           url: f.url,
           duration: Math.min(f.duration ?? 5, 5),
-          ...(scenes[i] ? { text: scenes[i] } : {}),
+          ...(scenes[i] ? { text: scenes[i].narration } : {}),
         }));
       } else if (mode === "ai_images_only") {
         builtAssets = images.map((url, i) => ({
@@ -361,7 +365,7 @@ export default function GeneratePage() {
           type: "image" as const,
           url,
           duration: 4,
-          ...(scenes[i] ? { text: scenes[i] } : {}),
+          ...(scenes[i] ? { text: scenes[i].narration } : {}),
         }));
       } else if (mode === "ai_images_plus_ai_video") {
         const clips = clipRes.clips ?? [];
@@ -371,14 +375,14 @@ export default function GeneratePage() {
             type: "clip" as const,
             url: c.url,
             duration: Math.min(c.duration ?? 5, 5),
-            ...(scenes[i] ? { text: scenes[i] } : {}),
+            ...(scenes[i] ? { text: scenes[i].narration } : {}),
           })),
           ...images.slice(clips.length).map((url, i) => ({
             index: clips.length + i,
             type: "image" as const,
             url,
             duration: 4,
-            ...(scenes[clips.length + i] ? { text: scenes[clips.length + i] } : {}),
+            ...(scenes[clips.length + i] ? { text: scenes[clips.length + i].narration } : {}),
           })),
         ];
       }

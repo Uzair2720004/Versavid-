@@ -39,6 +39,12 @@ async function writeScript(
                 `${format} YouTube video about "${topic}". Open with a strong hook, deliver tight ` +
                  `value, and end with a call to action. This MUST have EXACTLY ${Math.max(3, Math.round(targetSeconds / 5))} distinct scenes — no more, no fewer — ` +
                 `(one new scene roughly every 4-5 seconds of narration) so each scene has a matching visual. ` +
+                `For each [HOOK]/[SCENE N]/[CTA] section, immediately after the label add one line in the ` +
+                `exact format [VISUAL: short concrete description of what should be shown on screen — physical ` +
+                `objects, settings, or imagery, not abstract concepts], then a blank line, then the narration ` +
+                `for that section. Example: [SCENE 2]\\n[VISUAL: crumbling stone ruins, dramatic golden-hour ` +
+                `lighting, ancient Roman columns]\\nCorruption rotted Rome from the inside — 26 emperors ` +
+                `assassinated in just 50 years. ` +
                 `Write the ENTIRE script — hook, scenes, and CTA — in ${languageName}. ` +
                 `Label sections like [HOOK], [SCENE 2], [CTA]. No stage directions other than those labels.`,
             },

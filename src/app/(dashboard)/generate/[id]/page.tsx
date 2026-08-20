@@ -10,6 +10,7 @@ import { Card, StatusBadge } from "@/components/ui/primitives";
 import { Button, ButtonLink } from "@/components/ui/Button";
 import { Icon } from "@/components/ui/Icon";
 import { GEN_STEPS } from "@/lib/constants";
+import { MUSIC_TRACKS } from "@/lib/generation-options";
 import type { GenStep, LogEntry, VideoEditAsset } from "@/lib/types";
 import { cn } from "@/lib/utils";
 import AmbientBackground from "@/components/AmbientBackground";
@@ -351,7 +352,7 @@ export default function GeneratePage() {
           index: i,
           type: "footage" as const,
           url: f.url,
-          ...(f.duration != null ? { duration: f.duration } : {}),
+          duration: Math.min(f.duration ?? 5, 5),
           ...(scenes[i] ? { text: scenes[i] } : {}),
         }));
       } else if (mode === "ai_images_only") {
@@ -359,6 +360,7 @@ export default function GeneratePage() {
           index: i,
           type: "image" as const,
           url,
+          duration: 4,
           ...(scenes[i] ? { text: scenes[i] } : {}),
         }));
       } else if (mode === "ai_images_plus_ai_video") {
@@ -368,13 +370,14 @@ export default function GeneratePage() {
             index: i,
             type: "clip" as const,
             url: c.url,
-            ...(c.duration != null ? { duration: c.duration } : {}),
+            duration: Math.min(c.duration ?? 5, 5),
             ...(scenes[i] ? { text: scenes[i] } : {}),
           })),
           ...images.slice(clips.length).map((url, i) => ({
             index: clips.length + i,
             type: "image" as const,
             url,
+            duration: 4,
             ...(scenes[clips.length + i] ? { text: scenes[clips.length + i] } : {}),
           })),
         ];
@@ -387,7 +390,7 @@ export default function GeneratePage() {
         edits: {
           assets: builtAssets,
           captionStyle: s.captionStyle,
-          music: s.music,
+          music: MUSIC_TRACKS[s.music] ? s.music : "uplifting",
           musicVolume: 0.15,
         },
       });

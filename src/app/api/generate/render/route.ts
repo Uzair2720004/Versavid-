@@ -116,6 +116,7 @@ export async function POST(request: Request) {
   }
 
   const cleanText = script
+    .replace(/^[\s\S]*?(?=\[(HOOK|SCENE|CTA)\b)/i, "")
     .replace(/\[[^\]]+\]/g, "")
     .replace(/[#*_`>]/g, "")
     .replace(/\n{2,}/g, " ")
